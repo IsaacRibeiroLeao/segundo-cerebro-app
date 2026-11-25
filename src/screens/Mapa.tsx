@@ -9,6 +9,7 @@ import { useDados } from "../lib/dados";
 import { calcularLayout, corDoTema } from "../lib/grafo";
 import { type Abas, type Conexao, GRUPO, type GrupoConexao, NOMES_LIVROS, type Nota, passagemPrincipal } from "../lib/types";
 import { serif, useCores } from "../theme";
+import { Vazio } from "../components/Vazio";
 import { Entra, Pensando, Toque } from "../components/anim";
 import { NOME_GRUPO, useCorGrupo } from "../components/Conexoes";
 import { Passagem } from "../components/Passagem";
@@ -124,7 +125,7 @@ export function Mapa() {
 
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: c.paper }}>
-      <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 40 }}>
+      <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 110 }}>
         <View style={{ paddingHorizontal: 8 }}>
           <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink }}>Mapa</Text>
           <Text style={{ color: c.muted, marginTop: 2 }}>Toque numa ligação para ver por que as duas notas se conectam.</Text>
@@ -155,7 +156,7 @@ export function Mapa() {
         {notas && (
           <Entra style={{ marginTop: 12, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 18, overflow: "hidden" }}>
             {nos.length === 0 ? (
-              <Text style={{ color: c.muted, textAlign: "center", padding: 36 }}>{notas.length === 0 ? "O mapa aparece quando você escrever suas primeiras notas." : "Nada neste recorte."}</Text>
+              <View style={{ padding: 24 }}><Vazio texto={notas.length === 0 ? "O mapa aparece quando você escrever suas primeiras notas." : "Nada neste recorte."} /></View>
             ) : (
               <View>
                 <Svg width={largura} height={alturaSvg} viewBox={viewBox}>

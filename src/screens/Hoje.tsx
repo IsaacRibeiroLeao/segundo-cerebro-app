@@ -10,6 +10,7 @@ import { guardarNaFila, sincronizar } from "../lib/fila";
 import { type Abas, passagemPrincipal } from "../lib/types";
 import { serif, useCores } from "../theme";
 import { Botao, Campo } from "../components/ui";
+import { Vazio } from "../components/Vazio";
 import { Entra, Pensando, Respira, Toque } from "../components/anim";
 import { Icon } from "../components/Icon";
 import { ListaFontes, TextoComCitacoes } from "../components/Citacoes";
@@ -99,7 +100,7 @@ export function Hoje() {
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: c.paper }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 110 }} keyboardShouldPersistTaps="handled">
           <Entra>
             <Text style={{ color: c.muted, fontSize: 13 }}>
               {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
@@ -124,7 +125,8 @@ export function Hoje() {
                 value={conteudo}
                 onChangeText={setConteudo}
                 placeholder="Escreva o que o Espírito Santo falou ao seu coração…"
-                style={{ minHeight: 120, textAlignVertical: "top", borderWidth: 0, backgroundColor: "transparent", fontFamily: serif, fontSize: 17, lineHeight: 25, paddingHorizontal: 0, paddingRight: 44 }}
+                estilo={{ borderWidth: 0, backgroundColor: "transparent", paddingHorizontal: 0, alignItems: "flex-start" }}
+                style={{ minHeight: 120, textAlignVertical: "top", fontFamily: serif, fontSize: 17, lineHeight: 25, paddingRight: 44 }}
               />
               <View style={{ position: "absolute", right: 0, top: 0, width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
                 <Respira ativo={ditado.ativo} cor={c.accent} tamanho={36} />
@@ -192,10 +194,7 @@ export function Hoje() {
             <Toque onPress={() => nav.navigate("Notas")}><Text style={{ color: c.muted }}>Ver todas</Text></Toque>
           </View>
           {notas && recentes.length === 0 ? (
-            <Entra style={{ alignItems: "center", marginTop: 8 }}>
-              <Image source={require("../../assets/icons/ilustracao-vazio.png")} style={{ width: 200, height: 200 }} />
-              <Text style={{ color: c.muted }}>Sua primeira anotação começa aqui.</Text>
-            </Entra>
+            <Vazio texto="Sua primeira anotação começa aqui." />
           ) : (
             recentes.map((n, i) => {
               const p = passagemPrincipal(n);

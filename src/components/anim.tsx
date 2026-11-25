@@ -76,3 +76,17 @@ export function Respira({ ativo, cor, tamanho }: { ativo: boolean; cor: string; 
     <Animated.View pointerEvents="none" style={{ position: "absolute", width: tamanho, height: tamanho, borderRadius: tamanho / 2, backgroundColor: cor, opacity: v.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0] }), transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.8] }) }] }} />
   );
 }
+
+// Logo que flutua devagar.
+export function Flutua({ children }: { children: ReactNode }) {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const l = Animated.loop(Animated.sequence([
+      Animated.timing(v, { toValue: 1, duration: 2600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      Animated.timing(v, { toValue: 0, duration: 2600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+    ]));
+    l.start();
+    return () => l.stop();
+  }, [v]);
+  return <Animated.View style={{ transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -8] }) }] }}>{children}</Animated.View>;
+}

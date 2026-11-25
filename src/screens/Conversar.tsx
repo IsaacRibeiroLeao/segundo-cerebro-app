@@ -147,7 +147,7 @@ export function Conversar() {
             </View>
           }
         />
-        <View style={{ flexDirection: "row", gap: 8, padding: 12, borderTopWidth: 1, borderTopColor: c.line }}>
+        <View style={{ flexDirection: "row", gap: 8, padding: 12, paddingBottom: 90 }}>
           <Campo
             value={texto}
             onChangeText={setTexto}

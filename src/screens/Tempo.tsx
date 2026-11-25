@@ -10,6 +10,7 @@ import { desligarLembrete, lembreteAtivo, ligarLembrete } from "../lib/lembrete"
 import { type Abas, type Fonte, NOMES_LIVROS, passagemPrincipal, type Revisao } from "../lib/types";
 import { serif, useCores } from "../theme";
 import { Botao } from "../components/ui";
+import { Vazio } from "../components/Vazio";
 import { Entra, Pensando, Toque } from "../components/anim";
 import { TextoComCitacoes } from "../components/Citacoes";
 import { limparCitacoes } from "../components/RevisaoCard";
@@ -91,7 +92,7 @@ export function Tempo() {
 
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: c.paper }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 110 }}>
         <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink }}>Linha do tempo</Text>
         <Text style={{ color: c.muted, marginTop: 2 }}>Veja como cada tema foi crescendo ao longo dos meses.</Text>
 
@@ -127,7 +128,7 @@ export function Tempo() {
             )}
 
             {!notas && <View style={{ marginTop: 24 }}><Pensando texto="Carregando" /></View>}
-            {notas && lista.length === 0 && <Text style={{ color: c.muted, textAlign: "center", marginTop: 30 }}>Nenhuma nota nesse recorte.</Text>}
+            {notas && lista.length === 0 && <Vazio texto="Nenhuma nota nesse recorte." />}
 
             <View style={{ marginTop: 22, marginLeft: 8, borderLeftWidth: 1, borderLeftColor: c.line, paddingLeft: 20 }}>
               {grupos.map(([mes, itens], gi) => (
@@ -163,7 +164,7 @@ export function Tempo() {
             </View>
             <Botao titulo="Gerar revisão dos últimos 7 dias" onPress={novaRevisao} carregando={gerando} estilo={{ marginTop: 14 }} />
             {gerando && <View style={{ marginTop: 12 }}><Pensando texto="Relendo a sua semana" /></View>}
-            {revisoes && revisoes.length === 0 && !gerando && <Text style={{ color: c.muted, textAlign: "center", marginTop: 24 }}>Nenhuma revisão ainda.</Text>}
+            {revisoes && revisoes.length === 0 && !gerando && <Vazio texto="Nenhuma revisão ainda." />}
             {(revisoes ?? []).map((r, i) => (
               <Entra key={r.id} delay={i * 50} style={{ marginTop: 12, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 16, padding: 16 }}>
                 <Text style={{ color: c.muted, fontSize: 12 }}>{formatarData(r.inicio)} a {formatarData(r.fim)}</Text>

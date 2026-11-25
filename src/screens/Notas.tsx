@@ -9,6 +9,7 @@ import { exportarMarkdown, useDados } from "../lib/dados";
 import type { Abas, Conexao, Nota, Reflexao } from "../lib/types";
 import { serif, useCores } from "../theme";
 import { Botao, Campo } from "../components/ui";
+import { Vazio } from "../components/Vazio";
 import { Entra, Pensando, Toque } from "../components/anim";
 import { Icon } from "../components/Icon";
 import { ListaConexoes } from "../components/Conexoes";
@@ -226,7 +227,7 @@ export function Notas() {
           data={lista}
           keyExtractor={(n) => n.id}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+          contentContainerStyle={{ padding: 20, paddingBottom: 110 }}
           onScrollToIndexFailed={(info) => setTimeout(() => lista$.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true }), 100)}
           ListHeaderComponent={
             <View style={{ marginBottom: 14 }}>
@@ -250,7 +251,7 @@ export function Notas() {
               {!notas && <View style={{ marginTop: 24 }}><Pensando texto="Carregando" /></View>}
             </View>
           }
-          ListEmptyComponent={notas ? (<Text style={{ color: c.muted, textAlign: "center", marginTop: 30 }}>{notas.length === 0 ? "Você ainda não escreveu nenhuma nota." : "Nada encontrado."}</Text>) : undefined}
+          ListEmptyComponent={notas ? <Vazio texto={notas.length === 0 ? "Você ainda não escreveu nenhuma nota." : "Nada encontrado."} /> : undefined}
           renderItem={({ item, index }) => (
             <Cartao nota={item} notas={notas ?? []} conexoes={conexoes} indice={index} aberta={aberta === item.id} destaque={destaque === item.id}
               aoAlternar={() => setAberta(aberta === item.id ? null : item.id)} aoAbrirOutra={abrirOutra} recarregar={recarregar} />
