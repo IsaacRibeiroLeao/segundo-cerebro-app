@@ -1,304 +1,262 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, FlatList, Pressable, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, FlatList, KeyboardAvoidingView, Platform, ScrollView, Share, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { RouteProp, useFocusEffect, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { supabase } from "../lib/supabase";
-import { formatarData, parseLista, processarNota, reprocessarPendentes } from "../lib/cerebro";
-import { Abas, COLUNAS_NOTA, Fonte, Nota } from "../lib/types";
+import { buscar, formatarData, parseLista, processarNota } from "../lib/cerebro";
+import { exportarMarkdown, useDados } from "../lib/dados";
+import type { Abas, Conexao, Nota, Reflexao } from "../lib/types";
 import { serif, useCores } from "../theme";
 import { Botao, Campo } from "../components/ui";
+import { Entra, Pensando, Toque } from "../components/anim";
 import { Icon } from "../components/Icon";
-import { ListaFontes } from "../components/Citacoes";
+import { ListaConexoes } from "../components/Conexoes";
+import { Passagem } from "../components/Passagem";
+import { TagsSugeridas } from "../components/TagsSugeridas";
 
-export function Notas() {
-  const c = useCores();
-  const route = useRoute<RouteProp<Abas, "Notas">>();
-  const notaId = route.params?.notaId;
-  const lista = useRef<FlatList<Nota>>(null);
-  const [notas, setNotas] = useState<Nota[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [busca, setBusca] = useState("");
-  const [tag, setTag] = useState<string | null>(null);
-  const [pendentes, setPendentes] = useState(0);
-  const [rodando, setRodando] = useState(false);
+const ORIGEM: Record<Reflexao["origem"], string> = { auto: "Ao guardar", edicao: "Após editar", manual: "Pedida por você" };
+const semCitacao = (t: string) => t.replace(/\s?\[\d+\]/g, "");
 
-  const carregar = useCallback(async () => {
-    const [{ data }, { count }] = await Promise.all([
-      supabase.from("sc_notas").select(COLUNAS_NOTA).order("created_at", { ascending: false }),
-      supabase.from("sc_notas").select("id", { count: "exact", head: true }).is("embedding", null),
-    ]);
-    setNotas((data ?? []) as Nota[]);
-    setPendentes(count ?? 0);
-    setCarregando(false);
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      carregar();
-    }, [carregar]),
-  );
-
-  const todasTags = useMemo(() => {
-    const cont = new Map<string, number>();
-    notas.forEach((n) => n.tags.forEach((t) => cont.set(t, (cont.get(t) ?? 0) + 1)));
-    return [...cont.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t);
-  }, [notas]);
-
-  const filtradas = useMemo(() => {
-    const q = busca.trim().toLowerCase();
-    return notas.filter(
-      (n) =>
-        (!tag || n.tags.includes(tag)) &&
-        (!q ||
-          n.conteudo.toLowerCase().includes(q) ||
-          n.referencias.some((r) => r.toLowerCase().includes(q)) ||
-          n.tags.some((t) => t.toLowerCase().includes(q))),
-    );
-  }, [notas, busca, tag]);
-
-  useEffect(() => {
-    if (!notaId || carregando) return;
-    const i = filtradas.findIndex((n) => n.id === notaId);
-    if (i >= 0) setTimeout(() => lista.current?.scrollToIndex({ index: i, animated: true }), 150);
-  }, [notaId, carregando, filtradas]);
-
-  return (
-    <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: c.paper }}>
-      <FlatList
-        ref={lista}
-        data={filtradas}
-        keyExtractor={(n) => n.id}
-        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
-        keyboardShouldPersistTaps="handled"
-        onScrollToIndexFailed={() => {}}
-        ListHeaderComponent={
-          <View>
-            <Text style={{ fontFamily: serif, fontSize: 30, color: c.ink }}>Notas</Text>
-            <Text style={{ color: c.muted, marginTop: 2 }}>{notas.length} anotações</Text>
-            <Campo
-              value={busca}
-              onChangeText={setBusca}
-              placeholder="Buscar por palavra, versículo ou tag…"
-              estilo={{ marginTop: 14 }}
-            />
-            {todasTags.length > 0 && (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-                {todasTags.map((t) => (
-                  <Pressable
-                    key={t}
-                    onPress={() => setTag(tag === t ? null : t)}
-                    style={{
-                      backgroundColor: tag === t ? c.accent : c.accentSoft,
-                      borderRadius: 99,
-                      paddingHorizontal: 12,
-                      paddingVertical: 5,
-                    }}
-                  >
-                    <Text style={{ color: tag === t ? c.onAccent : c.accent }}>#{t}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            )}
-            {pendentes > 0 && (
-              <View
-                style={{
-                  marginTop: 14,
-                  backgroundColor: c.accentSoft,
-                  borderRadius: 12,
-                  padding: 12,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 10,
-                }}
-              >
-                <Text style={{ color: c.ink, flex: 1 }}>{pendentes} nota(s) sem conexões.</Text>
-                <Botao
-                  titulo="Conectar"
-                  carregando={rodando}
-                  onPress={async () => {
-                    setRodando(true);
-                    try {
-                      await reprocessarPendentes();
-                      await carregar();
-                    } catch {
-                      /* tenta depois */
-                    }
-                    setRodando(false);
-                  }}
-                  estilo={{ paddingVertical: 8, paddingHorizontal: 14 }}
-                />
-              </View>
-            )}
-            <View style={{ height: 8 }} />
-          </View>
-        }
-        ListEmptyComponent={
-          <Text style={{ color: c.muted, marginTop: 24 }}>
-            {carregando ? "Carregando…" : "Nenhuma nota encontrada."}
-          </Text>
-        }
-        renderItem={({ item }) => <NotaCard nota={item} destacada={item.id === notaId} aoMudar={carregar} />}
-      />
-    </SafeAreaView>
-  );
-}
-
-function NotaCard({ nota, destacada, aoMudar }: { nota: Nota; destacada: boolean; aoMudar: () => void }) {
+function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, aoAbrirOutra, recarregar }: {
+  nota: Nota; notas: Nota[]; conexoes: Conexao[]; aberta: boolean; destaque: boolean; indice: number;
+  aoAlternar: () => void; aoAbrirOutra: (id: string) => void; recarregar: () => Promise<void>;
+}) {
   const c = useCores();
   const [editando, setEditando] = useState(false);
   const [texto, setTexto] = useState(nota.conteudo);
   const [refs, setRefs] = useState(nota.referencias.join(", "));
   const [tags, setTags] = useState(nota.tags.join(", "));
-  const [parecidas, setParecidas] = useState<Fonte[] | null>(null);
-  const [verReflexao, setVerReflexao] = useState(false);
-  const [ocupado, setOcupado] = useState(false);
+  const [ocupado, setOcupado] = useState<null | "salvando" | "refletindo">(null);
+  const [erro, setErro] = useState<string | null>(null);
+  const [versoes, setVersoes] = useState<Reflexao[] | null>(null);
 
-  async function salvar() {
-    setOcupado(true);
-    await supabase
-      .from("sc_notas")
-      .update({
-        conteudo: texto.trim(),
-        referencias: parseLista(refs),
-        tags: parseLista(tags, true),
-        embedding: null,
-        reflexao: null,
-      })
-      .eq("id", nota.id);
-    try {
-      await processarNota(nota.id);
-    } catch {
-      /* fica pendente */
-    }
+  const nConexoes = conexoes.filter((x) => x.a === nota.id || x.b === nota.id).length;
+  const refsIa = nota.sc_nota_refs.filter((r) => r.origem === "ia");
+  const refsUsuario = nota.sc_nota_refs.filter((r) => r.origem === "usuario");
+
+  async function carregarVersoes() {
+    const { data } = await supabase.from("sc_reflexoes").select("id, texto, origem, created_at").eq("nota_id", nota.id).order("created_at", { ascending: false });
+    setVersoes((data ?? []) as Reflexao[]);
+  }
+
+  async function salvarEdicao() {
+    if (!texto.trim()) return;
+    setErro(null);
+    setOcupado("salvando");
+    const { error } = await supabase.from("sc_notas")
+      .update({ conteudo: texto.trim(), referencias: parseLista(refs), tags: parseLista(tags, true), processada_em: null }).eq("id", nota.id);
+    if (error) { setErro(error.message); setOcupado(null); return; }
     setEditando(false);
-    setOcupado(false);
-    aoMudar();
+    setOcupado("refletindo");
+    try { await processarNota(nota.id, "edicao"); } catch (e) { setErro(`Alterações salvas, mas a nova reflexão falhou: ${(e as Error).message}`); }
+    setVersoes(null);
+    await recarregar();
+    setOcupado(null);
+  }
+
+  async function novaReflexao() {
+    setErro(null);
+    setOcupado("refletindo");
+    try { await processarNota(nota.id, "manual"); setVersoes(null); } catch (e) { setErro((e as Error).message); }
+    await recarregar();
+    setOcupado(null);
   }
 
   function apagar() {
-    Alert.alert("Apagar nota", "Isso não pode ser desfeito.", [
+    Alert.alert("Apagar esta nota?", "Ela e as suas conexões serão removidas e não dá para desfazer.", [
       { text: "Cancelar", style: "cancel" },
-      {
-        text: "Apagar",
-        style: "destructive",
-        onPress: async () => {
-          await supabase.from("sc_notas").delete().eq("id", nota.id);
-          aoMudar();
-        },
-      },
+      { text: "Apagar", style: "destructive", onPress: async () => {
+        const { error } = await supabase.from("sc_notas").delete().eq("id", nota.id);
+        if (error) setErro(error.message); else await recarregar();
+      } },
     ]);
   }
 
-  async function verParecidas() {
-    setOcupado(true);
-    try {
-      const r = await processarNota(nota.id);
-      setParecidas(r.fontes);
-      aoMudar();
-    } catch {
-      setParecidas([]);
-    }
-    setOcupado(false);
-  }
+  const rotulo = (t: string) => <Text style={{ color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, marginBottom: 6 }}>{t.toUpperCase()}</Text>;
 
   return (
-    <View
-      style={{
-        marginTop: 14,
-        backgroundColor: c.card,
-        borderColor: destacada ? c.accent : c.line,
-        borderWidth: destacada ? 2 : 1,
-        borderRadius: 18,
-        padding: 16,
-      }}
-    >
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <Text style={{ color: c.muted, fontSize: 12, flex: 1 }}>
-          {formatarData(nota.created_at)}
-          {nota.referencias.length ? ` · ${nota.referencias.join(", ")}` : ""}
-        </Text>
-        <View style={{ flexDirection: "row", gap: 14 }}>
-          <Pressable onPress={() => setEditando(!editando)} hitSlop={8}>
-            <Icon nome="editar" cor={c.muted} tamanho={18} />
-          </Pressable>
-          <Pressable onPress={apagar} hitSlop={8}>
-            <Icon nome="apagar" cor={c.muted} tamanho={18} />
-          </Pressable>
-        </View>
-      </View>
-
-      {editando ? (
-        <View style={{ marginTop: 8, gap: 8 }}>
-          <Campo
-            multiline
-            value={texto}
-            onChangeText={setTexto}
-            style={{ minHeight: 120, textAlignVertical: "top", fontFamily: serif, fontSize: 16 }}
-          />
-          <Campo value={refs} onChangeText={setRefs} placeholder="Referências" />
-          <Campo value={tags} onChangeText={setTags} placeholder="Tags" />
-          <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
-            <Botao titulo="Salvar" onPress={salvar} carregando={ocupado} desabilitado={!texto.trim()} />
-            <Pressable onPress={() => setEditando(false)}>
-              <Text style={{ color: c.muted }}>Cancelar</Text>
-            </Pressable>
+    <Entra delay={Math.min(indice, 8) * 40} style={{ marginBottom: 12 }}>
+      <View style={{ backgroundColor: c.card, borderRadius: 16, borderWidth: destaque ? 2 : 1, borderColor: destaque ? c.accent : c.line }}>
+        <Toque onPress={aoAlternar} accessibilityRole="button" accessibilityState={{ expanded: aberta }} style={{ padding: 14 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+            <Text style={{ color: c.muted, fontSize: 12 }}>{formatarData(nota.created_at)}</Text>
+            {refsUsuario.map((r) => <Text key={r.rotulo} style={{ color: c.accent, backgroundColor: c.accentSoft, fontSize: 12, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: "hidden" }}>{r.rotulo}</Text>)}
+            {refsIa.map((r) => <Text key={r.rotulo} style={{ color: c.sage, borderColor: c.sage, borderWidth: 1, borderStyle: "dashed", fontSize: 12, paddingHorizontal: 8, paddingVertical: 1, borderRadius: 999 }}>✦ {r.rotulo}</Text>)}
+            {nota.local ? <Text style={{ color: c.muted, fontSize: 12 }}>· aguardando envio</Text> : nConexoes > 0 ? <Text style={{ color: c.muted, fontSize: 12, marginLeft: "auto" }}>{nConexoes} {nConexoes === 1 ? "conexão" : "conexões"}</Text> : null}
           </View>
-        </View>
-      ) : (
-        <Text style={{ marginTop: 8, color: c.ink, fontFamily: serif, fontSize: 17, lineHeight: 25 }}>
-          {nota.conteudo}
-        </Text>
-      )}
+          <Text numberOfLines={aberta ? undefined : 3} style={{ marginTop: 8, color: c.ink, fontFamily: serif, fontSize: 16, lineHeight: 24 }}>{nota.conteudo}</Text>
+          {nota.tags.length > 0 && <Text style={{ marginTop: 8, color: c.muted, fontSize: 12 }}>{nota.tags.map((t) => `#${t}`).join("  ")}</Text>}
+        </Toque>
 
-      {nota.tags.length > 0 && (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
-          {nota.tags.map((t) => (
-            <Text
-              key={t}
-              style={{
-                color: c.accent,
-                backgroundColor: c.accentSoft,
-                borderRadius: 99,
-                paddingHorizontal: 10,
-                paddingVertical: 2,
-                fontSize: 12,
-                overflow: "hidden",
-              }}
-            >
-              #{t}
-            </Text>
-          ))}
-        </View>
-      )}
-
-      {nota.reflexao && !editando && (
-        <Pressable
-          onPress={() => setVerReflexao(!verReflexao)}
-          style={{ marginTop: 14, backgroundColor: c.paper, borderRadius: 12, padding: 12 }}
-        >
-          <Text style={{ color: c.sage, fontWeight: "600" }}>
-            {verReflexao ? "▾" : "▸"} Reflexão do segundo cérebro
-          </Text>
-          {verReflexao && <Text style={{ color: c.muted, marginTop: 8, lineHeight: 21 }}>{nota.reflexao}</Text>}
-        </Pressable>
-      )}
-
-      {!editando && (
-        <View style={{ marginTop: 12 }}>
-          <Pressable onPress={verParecidas} disabled={ocupado}>
-            <Text style={{ color: c.accent, fontWeight: "600", opacity: ocupado ? 0.5 : 1 }}>
-              {ocupado ? "Buscando…" : "Ver notas parecidas"}
-            </Text>
-          </Pressable>
-          {parecidas &&
-            (parecidas.length ? (
-              <ListaFontes fontes={parecidas} />
+        {aberta && !nota.local && (
+          <Entra style={{ borderTopWidth: 1, borderTopColor: c.line, padding: 14, gap: 18 }}>
+            {editando ? (
+              <View style={{ gap: 8 }}>
+                <Campo multiline value={texto} onChangeText={setTexto} style={{ minHeight: 110, textAlignVertical: "top", fontFamily: serif, fontSize: 16 }} />
+                <Campo value={refs} onChangeText={setRefs} placeholder="Passagem (opcional)" />
+                <Campo value={tags} onChangeText={setTags} placeholder="Tags" />
+                <Botao titulo="Salvar e refazer reflexão" onPress={salvarEdicao} carregando={ocupado === "salvando"} desabilitado={!texto.trim() || ocupado !== null} />
+                <Toque onPress={() => setEditando(false)} style={{ alignItems: "center", padding: 8 }}><Text style={{ color: c.muted }}>Cancelar</Text></Toque>
+              </View>
             ) : (
-              <Text style={{ color: c.muted, marginTop: 8 }}>Nenhuma conexão encontrada ainda.</Text>
-            ))}
-        </View>
-      )}
-    </View>
+              <>
+                {(refsUsuario.length > 0 || refsIa.length > 0) && (
+                  <View>
+                    {rotulo("Passagem e contexto")}
+                    <View style={{ gap: 8 }}>
+                      {refsUsuario.map((r) => <Passagem key={r.rotulo} rotulo={r.rotulo} />)}
+                      {refsIa.map((r) => <Passagem key={r.rotulo} rotulo={r.rotulo} sugerida motivo={nota.passagem_ia?.motivo} />)}
+                    </View>
+                  </View>
+                )}
+                <TagsSugeridas nota={nota} aoMudar={recarregar} />
+                <View>
+                  {rotulo("Reflexão")}
+                  {ocupado === "refletindo" ? <Pensando texto="Pensando de novo sobre esta nota" /> : (
+                    <Text style={{ color: nota.reflexao ? c.ink : c.muted, fontSize: 15, lineHeight: 23 }}>{nota.reflexao ? semCitacao(nota.reflexao) : "Ainda sem reflexão."}</Text>
+                  )}
+                  <View style={{ flexDirection: "row", gap: 18, marginTop: 10 }}>
+                    <Toque onPress={novaReflexao} disabled={ocupado !== null} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                      <Icon nome="refazer" cor={c.accent} tamanho={16} /><Text style={{ color: c.accent }}>Gerar nova reflexão</Text>
+                    </Toque>
+                    <Toque onPress={() => (versoes ? setVersoes(null) : carregarVersoes())}><Text style={{ color: c.muted }}>{versoes ? "Ocultar versões" : "Ver versões"}</Text></Toque>
+                  </View>
+                  {versoes && (
+                    <Entra style={{ marginTop: 10, gap: 8 }}>
+                      {versoes.length === 0 && <Text style={{ color: c.muted }}>Nenhuma versão guardada ainda.</Text>}
+                      {versoes.map((v, i) => (
+                        <View key={v.id} style={{ borderWidth: 1, borderColor: c.line, backgroundColor: c.paper, borderRadius: 12, padding: 10 }}>
+                          <Text style={{ color: c.muted, fontSize: 12 }}>{i === 0 ? "Atual · " : ""}{ORIGEM[v.origem]} · {formatarData(v.created_at)}</Text>
+                          <Text style={{ color: c.ink, marginTop: 4, lineHeight: 21 }}>{semCitacao(v.texto)}</Text>
+                        </View>
+                      ))}
+                    </Entra>
+                  )}
+                </View>
+                <View>
+                  {rotulo("Por que está ligada a outras notas")}
+                  <ListaConexoes notaId={nota.id} conexoes={conexoes} notas={notas} aoAbrir={aoAbrirOutra} />
+                </View>
+                <View style={{ flexDirection: "row", gap: 22, borderTopWidth: 1, borderTopColor: c.line, paddingTop: 12 }}>
+                  <Toque onPress={() => setEditando(true)} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}><Icon nome="editar" cor={c.muted} tamanho={16} /><Text style={{ color: c.muted }}>Editar</Text></Toque>
+                  <Toque onPress={apagar} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}><Icon nome="apagar" cor={c.muted} tamanho={16} /><Text style={{ color: c.muted }}>Apagar</Text></Toque>
+                </View>
+              </>
+            )}
+            {erro ? <Text style={{ color: c.ink, backgroundColor: c.accentSoft, padding: 10, borderRadius: 10 }}>{erro}</Text> : null}
+          </Entra>
+        )}
+      </View>
+    </Entra>
+  );
+}
+
+export function Notas() {
+  const c = useCores();
+  const rota = useRoute<RouteProp<Abas, "Notas">>();
+  const nav = useNavigation<BottomTabNavigationProp<Abas>>();
+  const { notas, conexoes, offline, recarregar } = useDados();
+  const [busca, setBusca] = useState("");
+  const [achados, setAchados] = useState<{ ids: string[]; semantica: boolean } | null>(null);
+  const [buscando, setBuscando] = useState(false);
+  const [tag, setTag] = useState<string | null>(null);
+  const [aberta, setAberta] = useState<string | null>(null);
+  const [destaque, setDestaque] = useState<string | null>(null);
+  const lista$ = useRef<FlatList<Nota>>(null);
+
+  useEffect(() => {
+    const q = busca.trim();
+    if (q.length < 2) { setAchados(null); return; }
+    const t = setTimeout(async () => {
+      setBuscando(true);
+      try {
+        const r = await buscar(q);
+        setAchados({ ids: r.resultados.map((x) => x.id), semantica: r.semantica });
+      } catch {
+        const min = q.toLowerCase();
+        setAchados({ ids: (notas ?? []).filter((n) => n.conteudo.toLowerCase().includes(min)).map((n) => n.id), semantica: false });
+      }
+      setBuscando(false);
+    }, 600);
+    return () => clearTimeout(t);
+  }, [busca, notas]);
+
+  const todasTags = useMemo(() => {
+    const f = new Map<string, number>();
+    for (const n of notas ?? []) for (const t of n.tags) f.set(t, (f.get(t) ?? 0) + 1);
+    return [...f.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t);
+  }, [notas]);
+
+  const lista = useMemo(() => {
+    let base = notas ?? [];
+    if (achados) {
+      const ordem = new Map(achados.ids.map((id, i) => [id, i]));
+      base = base.filter((n) => ordem.has(n.id)).sort((a, b) => ordem.get(a.id)! - ordem.get(b.id)!);
+    }
+    return tag ? base.filter((n) => n.tags.includes(tag)) : base;
+  }, [notas, achados, tag]);
+
+  // Abre a nota pedida por outra tela.
+  const alvo = rota.params?.notaId;
+  useEffect(() => {
+    if (!alvo || !notas) return;
+    setBusca(""); setTag(null); setAberta(alvo); setDestaque(alvo);
+    const i = notas.findIndex((n) => n.id === alvo);
+    if (i >= 0) setTimeout(() => lista$.current?.scrollToIndex({ index: i, animated: true, viewPosition: 0.1 }), 250);
+    const t = setTimeout(() => setDestaque(null), 2500);
+    nav.setParams({ notaId: undefined });
+    return () => clearTimeout(t);
+  }, [alvo, notas, nav]);
+
+  function abrirOutra(id: string) {
+    setBusca(""); setTag(null); setAberta(id); setDestaque(id);
+    const i = (notas ?? []).findIndex((n) => n.id === id);
+    if (i >= 0) setTimeout(() => lista$.current?.scrollToIndex({ index: i, animated: true, viewPosition: 0.1 }), 200);
+    setTimeout(() => setDestaque(null), 2500);
+  }
+
+  const chip = (ativo: boolean) => ({ borderWidth: 1, borderColor: ativo ? c.accent : c.line, backgroundColor: ativo ? c.accent : "transparent", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 });
+
+  return (
+    <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: c.paper }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <FlatList
+          ref={lista$}
+          data={lista}
+          keyExtractor={(n) => n.id}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+          onScrollToIndexFailed={(info) => setTimeout(() => lista$.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true }), 100)}
+          ListHeaderComponent={
+            <View style={{ marginBottom: 14 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
+                <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink }}>Notas</Text>
+                <Toque disabled={!notas?.length} onPress={() => Share.share({ message: exportarMarkdown((notas ?? []).filter((n) => !n.local)), title: "Segundo Cérebro" })} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                  <Icon nome="baixar" cor={c.muted} tamanho={16} /><Text style={{ color: c.muted }}>Exportar</Text>
+                </Toque>
+              </View>
+              {offline && <Text style={{ color: c.muted, fontSize: 12, marginTop: 4 }}>Sem internet: mostrando o que está guardado no aparelho.</Text>}
+              <Campo value={busca} onChangeText={setBusca} placeholder="Buscar por palavra ou por ideia…" estilo={{ marginTop: 12 }} />
+              {buscando && <Text style={{ color: c.muted, fontSize: 12, marginTop: 4 }}>buscando…</Text>}
+              {achados && !achados.semantica && <Text style={{ color: c.muted, fontSize: 12, marginTop: 6 }}>Busca só por palavras agora (a busca por sentido está indisponível no momento).</Text>}
+              {todasTags.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }} contentContainerStyle={{ gap: 8 }}>
+                  {todasTags.map((t) => (
+                    <Toque key={t} onPress={() => setTag(tag === t ? null : t)} style={chip(tag === t)}><Text style={{ color: tag === t ? c.onAccent : c.muted }}>#{t}</Text></Toque>
+                  ))}
+                </ScrollView>
+              )}
+              {!notas && <View style={{ marginTop: 24 }}><Pensando texto="Carregando" /></View>}
+            </View>
+          }
+          ListEmptyComponent={notas ? (<Text style={{ color: c.muted, textAlign: "center", marginTop: 30 }}>{notas.length === 0 ? "Você ainda não escreveu nenhuma nota." : "Nada encontrado."}</Text>) : undefined}
+          renderItem={({ item, index }) => (
+            <Cartao nota={item} notas={notas ?? []} conexoes={conexoes} indice={index} aberta={aberta === item.id} destaque={destaque === item.id}
+              aoAlternar={() => setAberta(aberta === item.id ? null : item.id)} aoAbrirOutra={abrirOutra} recarregar={recarregar} />
+          )}
+        />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

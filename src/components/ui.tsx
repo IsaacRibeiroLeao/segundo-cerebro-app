@@ -1,5 +1,6 @@
-import { ActivityIndicator, Pressable, StyleProp, Text, TextInput, TextInputProps, ViewStyle } from "react-native";
+import { ActivityIndicator, StyleProp, Text, TextInput, TextInputProps, ViewStyle } from "react-native";
 import { useCores } from "../theme";
+import { Toque } from "./anim";
 
 export function Botao({
   titulo,
@@ -17,7 +18,7 @@ export function Botao({
   const c = useCores();
   const off = desabilitado || carregando;
   return (
-    <Pressable
+    <Toque
       onPress={onPress}
       disabled={off}
       style={[
@@ -37,7 +38,7 @@ export function Botao({
       ) : (
         <Text style={{ color: c.onAccent, fontWeight: "600", fontSize: 15 }}>{titulo}</Text>
       )}
-    </Pressable>
+    </Toque>
   );
 }
 

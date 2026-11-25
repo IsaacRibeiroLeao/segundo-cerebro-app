@@ -2,7 +2,7 @@
   "expo": {
     "name": "Segundo Cérebro",
     "slug": "segundo-cerebro",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -17,7 +17,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.isaacleaodev.segundocerebro"
+      "package": "com.isaacleaodev.segundocerebro",
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,7 +35,18 @@
             "backgroundColor": "#16130f"
           }
         }
-      ]
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Permita o microfone para ditar suas notas.",
+          "speechRecognitionPermission": "Permita o reconhecimento de voz para ditar suas notas.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ],
+      "expo-notifications"
     ]
   }
 }

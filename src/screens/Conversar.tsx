@@ -7,6 +7,7 @@ import type { Mensagem } from "../lib/types";
 import { serif, useCores } from "../theme";
 import { Botao, Campo } from "../components/ui";
 import { ListaFontes, TextoComCitacoes } from "../components/Citacoes";
+import { Entra, Pensando } from "../components/anim";
 
 const SUGESTOES = [
   "O que mais se repete nas minhas anotações?",
@@ -137,7 +138,7 @@ export function Conversar() {
           }
           ListFooterComponent={
             <View>
-              {enviando && <Text style={{ color: c.muted, marginTop: 8 }}>Pensando junto com você…</Text>}
+              {enviando && <View style={{ marginTop: 8 }}><Pensando texto="Pensando junto com você" /></View>}
               {erro && (
                 <Text style={{ color: c.ink, backgroundColor: c.accentSoft, padding: 12, borderRadius: 12, marginTop: 8 }}>
                   {erro}

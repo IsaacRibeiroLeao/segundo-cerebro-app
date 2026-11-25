@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, View, useColorScheme } from "react-native";
+import { ActivityIndicator, AppState, View, useColorScheme } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DarkTheme, DefaultTheme, NavigationContainer } from "@react-navigation/native";
@@ -14,6 +14,8 @@ import { Hoje } from "./src/screens/Hoje";
 import { Notas } from "./src/screens/Notas";
 import { Conversar } from "./src/screens/Conversar";
 import { Mapa } from "./src/screens/Mapa";
+import { Tempo } from "./src/screens/Tempo";
+import { sincronizar } from "./src/lib/fila";
 
 const Tab = createBottomTabNavigator<Abas>();
 
@@ -34,6 +36,7 @@ function Navegacao() {
           tabBarActiveTintColor: c.accent,
           tabBarInactiveTintColor: c.muted,
           tabBarStyle: { backgroundColor: c.paper, borderTopColor: c.line },
+          animation: "shift",
         }}
       >
         <Tab.Screen
@@ -56,6 +59,11 @@ function Navegacao() {
           component={Mapa}
           options={{ tabBarIcon: ({ color }) => <Icon nome="mapa" cor={color} /> }}
         />
+        <Tab.Screen
+          name="Tempo"
+          component={Tempo}
+          options={{ tabBarIcon: ({ color }) => <Icon nome="tempo" cor={color} /> }}
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );
@@ -74,6 +82,15 @@ export default function App() {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // Notas escritas sem internet são enviadas ao abrir o app, ao voltar para ele e de tempos em tempos.
+  useEffect(() => {
+    if (!session) return;
+    sincronizar().catch(() => undefined);
+    const sub = AppState.addEventListener("change", (e) => { if (e === "active") sincronizar().catch(() => undefined); });
+    const t = setInterval(() => sincronizar().catch(() => undefined), 45000);
+    return () => { sub.remove(); clearInterval(t); };
+  }, [session]);
 
   return (
     <SafeAreaProvider>

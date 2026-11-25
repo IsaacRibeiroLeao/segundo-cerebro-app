@@ -62,7 +62,7 @@ export function ListaFontes({ fontes }: { fontes: Fonte[] }) {
           </Text>
           <Text numberOfLines={2} style={{ color: c.muted, fontSize: 14, flex: 1 }}>
             {formatarData(f.created_at)}
-            {f.referencias?.length ? ` · ${f.referencias.join(", ")}` : ""} — {f.trecho}
+            {f.referencias?.length ? ` · ${f.referencias.join(", ")}` : ""} — {f.motivo ?? f.trecho}
           </Text>
         </Pressable>
       ))}
