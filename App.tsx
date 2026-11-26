@@ -8,7 +8,8 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./src/lib/supabase";
 import type { Abas } from "./src/lib/types";
 import { useCores } from "./src/theme";
-import { Icon, type NomeIcone } from "./src/components/Icon";
+import { type NomeIcone } from "./src/components/Icon";
+import { Tile } from "./src/components/Tile";
 import { Login } from "./src/screens/Login";
 import { Hoje } from "./src/screens/Hoje";
 import { Notas } from "./src/screens/Notas";
@@ -23,15 +24,15 @@ import { limparDadosLocais } from "./src/lib/sessao";
 const Tab = createBottomTabNavigator<Abas>();
 
 // Ícone da aba: cresce um pouco e ganha um ponto quando está ativo.
-function IconeAba({ nome, cor, focado }: { nome: NomeIcone; cor: string; focado: boolean }) {
+function IconeAba({ nome, focado }: { nome: NomeIcone; cor?: string; focado: boolean }) {
   const v = useRef(new Animated.Value(focado ? 1 : 0)).current;
   useEffect(() => {
     Animated.spring(v, { toValue: focado ? 1 : 0, friction: 6, tension: 140, useNativeDriver: true }).start();
   }, [focado, v]);
   return (
     <View style={{ alignItems: "center" }}>
-      <Animated.View style={{ transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.18] }) }, { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -2] }) }] }}>
-        <Icon nome={nome} cor={cor} />
+      <Animated.View style={{ transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }, { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -2] }) }] }}>
+        <Tile nome={nome} tamanho={32} ativo={focado} />
       </Animated.View>
     </View>
   );
@@ -54,9 +55,9 @@ function Navegacao() {
           tabBarActiveTintColor: c.accent,
           tabBarInactiveTintColor: c.muted,
           tabBarShowLabel: true,
-          tabBarLabelStyle: { fontSize: 11, fontWeight: "600", marginBottom: 6 },
+          tabBarLabelStyle: { fontSize: 11, fontWeight: "600", marginBottom: 5 },
           tabBarStyle: {
-            position: "absolute", left: 12, right: 12, bottom: 12, height: 64, paddingTop: 6,
+            position: "absolute", left: 12, right: 12, bottom: 12, height: 68, paddingTop: 7,
             backgroundColor: c.card, borderTopWidth: 0, borderWidth: 1, borderColor: c.line, borderRadius: 24,
             elevation: 10, shadowColor: "#3c2814", shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 8 },
           },

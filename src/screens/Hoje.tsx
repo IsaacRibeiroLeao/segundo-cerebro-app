@@ -21,6 +21,9 @@ import { Passagem } from "../components/Passagem";
 import { RevisaoCard } from "../components/RevisaoCard";
 import { TagsSugeridas } from "../components/TagsSugeridas";
 import { useDitado } from "../components/useDitado";
+import { Tile } from "../components/Tile";
+import { useLeitura } from "../lib/leitura";
+import { NOMES_LIVROS, TOTAL_CAPITULOS, proximoNaoLido } from "../lib/livros";
 
 function saudacao() {
   const h = new Date().getHours();
@@ -28,6 +31,18 @@ function saudacao() {
 }
 
 const RASCUNHO = "sc_rascunho_v1";
+
+// Dias seguidos (até hoje ou ontem) com ao menos uma nota, e notas dos últimos 7 dias.
+function estatisticas(datas: string[]) {
+  const dia = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  const set = new Set(datas.map((d) => dia(new Date(d))));
+  const cur = new Date();
+  if (!set.has(dia(cur))) cur.setDate(cur.getDate() - 1);
+  let sequencia = 0;
+  while (set.has(dia(cur))) { sequencia++; cur.setDate(cur.getDate() - 1); }
+  const agora = new Date().getTime();
+  return { sequencia, semana: datas.filter((d) => agora - new Date(d).getTime() < 7 * 864e5).length };
+}
 
 export function Hoje() {
   const c = useCores();
@@ -133,6 +148,9 @@ export function Hoje() {
 
   const notaResultado = resultado ? notas?.find((n) => n.id === resultado.notaId) : undefined;
   const recentes = notas?.slice(0, 4) ?? [];
+  const { lidos } = useLeitura();
+  const { semana, sequencia } = estatisticas(notas?.map((n) => n.created_at) ?? []);
+  const proximo = lidos ? proximoNaoLido(lidos) : null;
 
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: c.paper }}>
@@ -159,6 +177,28 @@ export function Hoje() {
               </Text>
             </Entra>
           )}
+
+          {lidos && notas ? (
+            <Entra delay={60} style={{ marginTop: 16, backgroundColor: c.accentSoft, borderColor: c.accent, borderWidth: 1, borderRadius: 18, padding: 14 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: serif, fontSize: 18, color: c.ink }}>Sua jornada continua</Text>
+                  <Text style={{ color: c.muted, fontSize: 13, marginTop: 2 }}>
+                    {lidos.size} de {TOTAL_CAPITULOS} capítulos · {semana} {semana === 1 ? "nota" : "notas"} na semana · {sequencia} {sequencia === 1 ? "dia" : "dias"} seguidos
+                  </Text>
+                </View>
+                <Tile nome="biblia" tamanho={42} ativo />
+              </View>
+              <View style={{ height: 6, borderRadius: 999, backgroundColor: c.line, marginTop: 12, overflow: "hidden" }}>
+                <View style={{ height: 6, borderRadius: 999, backgroundColor: c.accent, width: `${Math.max(1, (lidos.size / TOTAL_CAPITULOS) * 100)}%` }} />
+              </View>
+              {proximo ? (
+                <Toque onPress={() => nav.navigate("Biblia")} style={{ marginTop: 10 }}>
+                  <Text style={{ color: c.accent, fontWeight: "600" }}>Continuar em {NOMES_LIVROS[proximo.livro]} {proximo.capitulo} →</Text>
+                </Toque>
+              ) : null}
+            </Entra>
+          ) : null}
 
           <Entra delay={80} style={{ marginTop: 18, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 18, padding: 14 }}>
             <View>
@@ -242,13 +282,16 @@ export function Hoje() {
               const p = passagemPrincipal(n);
               return (
                 <Entra key={n.id} delay={i * 60} style={{ marginTop: 12 }}>
-                  <Toque onPress={() => nav.navigate("Notas", { notaId: n.id })} style={{ backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 16, padding: 14 }}>
-                    <Text style={{ color: c.muted, fontSize: 12 }}>
-                      {formatarData(n.created_at)}
-                      {p ? ` · ${p.sugerida ? "✦ " : ""}${p.rotulo}` : ""}
-                      {n.local ? " · aguardando envio" : ""}
-                    </Text>
-                    <Text numberOfLines={3} style={{ marginTop: 4, color: c.ink, fontFamily: serif, fontSize: 16 }}>{n.conteudo}</Text>
+                  <Toque onPress={() => nav.navigate("Notas", { notaId: n.id })} style={{ flexDirection: "row", gap: 12, alignItems: "flex-start", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 16, padding: 14 }}>
+                    <Tile nome="notas" tamanho={38} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: c.muted, fontSize: 12 }}>
+                        {formatarData(n.created_at)}
+                        {p ? ` · ${p.sugerida ? "✦ " : ""}${p.rotulo}` : ""}
+                        {n.local ? " · aguardando envio" : ""}
+                      </Text>
+                      <Text numberOfLines={3} style={{ marginTop: 4, color: c.ink, fontFamily: serif, fontSize: 16 }}>{n.conteudo}</Text>
+                    </View>
                   </Toque>
                 </Entra>
               );

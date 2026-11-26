@@ -14,6 +14,8 @@ import { Avatar } from "../components/Avatar";
 import { Icon } from "../components/Icon";
 import { Botao, Campo } from "../components/ui";
 import { Entra, Pop, Toque } from "../components/anim";
+import { useDados } from "../lib/dados";
+import { useLeitura } from "../lib/leitura";
 
 export function Perfil() {
   const c = useCores();
@@ -24,8 +26,16 @@ export function Perfil() {
   const [ocupado, setOcupado] = useState(false);
   const [ok, setOk] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const { notas } = useDados();
+  const { lidos } = useLeitura();
+  const [desde, setDesde] = useState("");
 
-  useEffect(() => { supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? "")); }, []);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setEmail(data.user?.email ?? "");
+      if (data.user?.created_at) setDesde(new Date(data.user.created_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric" }));
+    });
+  }, []);
   useEffect(() => { if (perfil) setNome(perfil.nome ?? ""); }, [perfil]);
 
   async function trocarFoto() {
@@ -67,6 +77,16 @@ export function Perfil() {
           </Toque>
           <Text style={{ color: c.muted, marginTop: 10 }}>{ocupado ? "Salvando…" : "Toque na foto para trocar"}</Text>
           {perfil?.avatar ? <Toque onPress={() => salvar({ avatar: null }).catch((e) => setErro((e as Error).message))} style={{ padding: 6 }}><Text style={{ color: c.muted, fontSize: 12 }}>Remover foto</Text></Toque> : null}
+
+          <View style={{ alignSelf: "stretch", flexDirection: "row", gap: 10, marginTop: 18 }}>
+            {([["Notas", notas ? notas.length : "–"], ["Capítulos lidos", lidos ? lidos.size : "–"]] as const).map(([r, v]) => (
+              <View key={r} style={{ flex: 1, backgroundColor: c.paper, borderColor: c.line, borderWidth: 1, borderRadius: 16, padding: 12 }}>
+                <Text style={{ fontFamily: serif, fontSize: 24, color: c.accent }}>{v}</Text>
+                <Text style={{ color: c.muted, fontSize: 12 }}>{r}</Text>
+              </View>
+            ))}
+          </View>
+          {desde ? <Text style={{ color: c.muted, fontSize: 12, marginTop: 10 }}>Membro desde {desde}</Text> : null}
 
           <View style={{ alignSelf: "stretch", marginTop: 18, gap: 8 }}>
             <Text style={{ color: c.muted }}>Como devo te chamar?</Text>

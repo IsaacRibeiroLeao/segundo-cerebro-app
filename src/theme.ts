@@ -14,15 +14,15 @@ const claro = {
 };
 
 const escuro: typeof claro = {
-  paper: "#16130f",
-  card: "#1f1b16",
-  ink: "#ece4d6",
-  muted: "#a39886",
-  line: "#332d25",
-  accent: "#d9a066",
-  accentSoft: "#2c2318",
+  paper: "#110e0b",
+  card: "#1a1611",
+  ink: "#f0e8da",
+  muted: "#a89c8a",
+  line: "#3a2f22",
+  accent: "#e0a85f",
+  accentSoft: "#2e2214",
   sage: "#9bb08a",
-  onAccent: "#16130f",
+  onAccent: "#110e0b",
   danger: "#f2b8b5",
 };
 

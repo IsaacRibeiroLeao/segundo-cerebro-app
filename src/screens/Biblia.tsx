@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useMemo, useState } from "react";
-import { Modal, ScrollView, Text, View } from "react-native";
+import { Modal, ScrollView, Share, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
@@ -12,6 +12,7 @@ import type { Abas, Versiculos } from "../lib/types";
 import { serif, useCores } from "../theme";
 import { Entra, Pensando, Toque } from "../components/anim";
 
+const PRIMEIRO_NT = 39;
 const POS = "sc_biblia_pos_v1";
 type Pos = { livro: number; capitulo: number };
 
@@ -82,7 +83,19 @@ export function Biblia() {
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 130 }}>
         <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink }}>Bíblia</Text>
 
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 }}>
+        <View style={{ flexDirection: "row", alignSelf: "flex-start", marginTop: 14, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 16, padding: 4 }}>
+          {([["Antigo Testamento", false], ["Novo Testamento", true]] as const).map(([nome, nt]) => {
+            const ativo = (pos.livro >= PRIMEIRO_NT) === nt;
+            return (
+              <Toque key={nome} onPress={() => !ativo && setPos({ livro: nt ? PRIMEIRO_NT : 0, capitulo: 1 })}
+                style={{ borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: ativo ? c.accent : "transparent" }}>
+                <Text style={{ fontSize: 13, fontWeight: ativo ? "700" : "500", color: ativo ? c.onAccent : c.muted }}>{nome}</Text>
+              </Toque>
+            );
+          })}
+        </View>
+
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
           <Toque onPress={() => setEscolhendo(true)} style={[botao, { flex: 1, backgroundColor: c.card }]}>
             <Text style={{ color: c.ink, fontWeight: "600" }}>{nomeCap}  ▾</Text>
           </Toque>
@@ -112,6 +125,12 @@ export function Biblia() {
           </Toque>
           <Toque disabled={!texto} onPress={() => nav.navigate("Hoje", { refs: rotuloSelecao() })} style={[botao, { opacity: texto ? 1 : 0.4 }]}>
             <Text style={{ color: c.ink }}>Anotar sobre {selecionados.size ? rotuloSelecao() : "este capítulo"}</Text>
+          </Toque>
+          <Toque disabled={!texto} onPress={() => {
+            const ver = texto?.versiculos.filter((v) => !selecionados.size || selecionados.has(v.n)) ?? [];
+            Share.share({ message: `${ver.map((v) => `${v.n} ${v.texto}`).join(" ")}\n— ${rotuloSelecao()}` }).catch(() => undefined);
+          }} style={[botao, { opacity: texto ? 1 : 0.4 }]}>
+            <Text style={{ color: c.ink }}>Compartilhar</Text>
           </Toque>
           {lido && seguinte && <Toque onPress={() => setPos(seguinte)} style={{ paddingVertical: 10 }}><Text style={{ color: c.accent }}>Próximo →</Text></Toque>}
         </View>
