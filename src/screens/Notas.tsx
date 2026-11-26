@@ -9,6 +9,8 @@ import { exportarMarkdown, useDados } from "../lib/dados";
 import type { Abas, Conexao, Nota, Reflexao } from "../lib/types";
 import { serif, useCores } from "../theme";
 import { Botao, Campo } from "../components/ui";
+import { limparCitacoes } from "../lib/texto";
+import { TextoComCitacoes } from "../components/Citacoes";
 import { Vazio } from "../components/Vazio";
 import { Entra, Pensando, Toque } from "../components/anim";
 import { Icon } from "../components/Icon";
@@ -17,7 +19,7 @@ import { Passagem } from "../components/Passagem";
 import { TagsSugeridas } from "../components/TagsSugeridas";
 
 const ORIGEM: Record<Reflexao["origem"], string> = { auto: "Ao guardar", edicao: "Após editar", manual: "Pedida por você" };
-const semCitacao = (t: string) => t.replace(/\s?\[\d+\]/g, "");
+
 
 function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, aoAbrirOutra, recarregar }: {
   nota: Nota; notas: Nota[]; conexoes: Conexao[]; aberta: boolean; destaque: boolean; indice: number;
@@ -25,9 +27,9 @@ function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, a
 }) {
   const c = useCores();
   const [editando, setEditando] = useState(false);
-  const [texto, setTexto] = useState(nota.conteudo);
-  const [refs, setRefs] = useState(nota.referencias.join(", "));
-  const [tags, setTags] = useState(nota.tags.join(", "));
+  const [texto, setTexto] = useState("");
+  const [refs, setRefs] = useState("");
+  const [tags, setTags] = useState("");
   const [ocupado, setOcupado] = useState<null | "salvando" | "refletindo">(null);
   const [erro, setErro] = useState<string | null>(null);
   const [versoes, setVersoes] = useState<Reflexao[] | null>(null);
@@ -36,8 +38,16 @@ function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, a
   const refsIa = nota.sc_nota_refs.filter((r) => r.origem === "ia");
   const refsUsuario = nota.sc_nota_refs.filter((r) => r.origem === "usuario");
 
+  // Os campos são preenchidos ao abrir a edição, com o que a nota tem agora (tags confirmadas inclusive).
+  function abrirEdicao() {
+    setTexto(nota.conteudo);
+    setRefs(nota.referencias.join(", "));
+    setTags(nota.tags.join(", "));
+    setEditando(true);
+  }
+
   async function carregarVersoes() {
-    const { data } = await supabase.from("sc_reflexoes").select("id, texto, origem, created_at").eq("nota_id", nota.id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("sc_reflexoes").select("id, texto, origem, created_at, fontes").eq("nota_id", nota.id).order("created_at", { ascending: false });
     setVersoes((data ?? []) as Reflexao[]);
   }
 
@@ -115,7 +125,9 @@ function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, a
                 <View>
                   {rotulo("Reflexão")}
                   {ocupado === "refletindo" ? <Pensando texto="Pensando de novo sobre esta nota" /> : (
-                    <Text style={{ color: nota.reflexao ? c.ink : c.muted, fontSize: 15, lineHeight: 23 }}>{nota.reflexao ? semCitacao(nota.reflexao) : "Ainda sem reflexão."}</Text>
+                    nota.reflexao && nota.reflexao_fontes?.length
+                      ? <TextoComCitacoes texto={nota.reflexao} fontes={nota.reflexao_fontes} />
+                      : <Text style={{ color: nota.reflexao ? c.ink : c.muted, fontSize: 15, lineHeight: 23 }}>{nota.reflexao ? limparCitacoes(nota.reflexao) : "Ainda sem reflexão."}</Text>
                   )}
                   <View style={{ flexDirection: "row", gap: 18, marginTop: 10 }}>
                     <Toque onPress={novaReflexao} disabled={ocupado !== null} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
@@ -129,7 +141,7 @@ function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, a
                       {versoes.map((v, i) => (
                         <View key={v.id} style={{ borderWidth: 1, borderColor: c.line, backgroundColor: c.paper, borderRadius: 12, padding: 10 }}>
                           <Text style={{ color: c.muted, fontSize: 12 }}>{i === 0 ? "Atual · " : ""}{ORIGEM[v.origem]} · {formatarData(v.created_at)}</Text>
-                          <Text style={{ color: c.ink, marginTop: 4, lineHeight: 21 }}>{semCitacao(v.texto)}</Text>
+                          {v.fontes?.length ? <TextoComCitacoes texto={v.texto} fontes={v.fontes} /> : <Text style={{ color: c.ink, marginTop: 4, lineHeight: 21 }}>{limparCitacoes(v.texto)}</Text>}
                         </View>
                       ))}
                     </Entra>
@@ -140,7 +152,7 @@ function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, a
                   <ListaConexoes notaId={nota.id} conexoes={conexoes} notas={notas} aoAbrir={aoAbrirOutra} />
                 </View>
                 <View style={{ flexDirection: "row", gap: 22, borderTopWidth: 1, borderTopColor: c.line, paddingTop: 12 }}>
-                  <Toque onPress={() => setEditando(true)} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}><Icon nome="editar" cor={c.muted} tamanho={16} /><Text style={{ color: c.muted }}>Editar</Text></Toque>
+                  <Toque onPress={abrirEdicao} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}><Icon nome="editar" cor={c.muted} tamanho={16} /><Text style={{ color: c.muted }}>Editar</Text></Toque>
                   <Toque onPress={apagar} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}><Icon nome="apagar" cor={c.muted} tamanho={16} /><Text style={{ color: c.muted }}>Apagar</Text></Toque>
                 </View>
               </>
@@ -165,6 +177,8 @@ export function Notas() {
   const [aberta, setAberta] = useState<string | null>(null);
   const [destaque, setDestaque] = useState<string | null>(null);
   const lista$ = useRef<FlatList<Nota>>(null);
+  const notasRef = useRef<Nota[] | null>(null);
+  useEffect(() => { notasRef.current = notas; }, [notas]);
 
   useEffect(() => {
     const q = busca.trim();
@@ -176,12 +190,12 @@ export function Notas() {
         setAchados({ ids: r.resultados.map((x) => x.id), semantica: r.semantica });
       } catch {
         const min = q.toLowerCase();
-        setAchados({ ids: (notas ?? []).filter((n) => n.conteudo.toLowerCase().includes(min)).map((n) => n.id), semantica: false });
+        setAchados({ ids: (notasRef.current ?? []).filter((n) => n.conteudo.toLowerCase().includes(min)).map((n) => n.id), semantica: false });
       }
       setBuscando(false);
     }, 600);
     return () => clearTimeout(t);
-  }, [busca, notas]);
+  }, [busca]);
 
   const todasTags = useMemo(() => {
     const f = new Map<string, number>();

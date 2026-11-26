@@ -6,10 +6,11 @@ import type { Fonte, Revisao } from "../lib/types";
 import { serif, useCores } from "../theme";
 import { Entra, Pensando, Toque } from "./anim";
 import { Botao } from "./ui";
+import { limparCitacoes } from "../lib/texto";
 import { TextoComCitacoes } from "./Citacoes";
 
 const SETE_DIAS = 7 * 86400000;
-export const limparCitacoes = (t: string) => t.replace(/\s?\[\d+\]/g, "");
+
 
 export function RevisaoCard() {
   const c = useCores();

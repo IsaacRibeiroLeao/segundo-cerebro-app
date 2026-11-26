@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useRef, useState } from "react";
 import { Image, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -26,6 +27,8 @@ function saudacao() {
   return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
 }
 
+const RASCUNHO = "sc_rascunho_v1";
+
 export function Hoje() {
   const c = useCores();
   const nav = useNavigation<BottomTabNavigationProp<Abas>>();
@@ -35,7 +38,25 @@ export function Hoje() {
   const [conteudo, setConteudo] = useState("");
   const [refs, setRefs] = useState("");
   const [tags, setTags] = useState("");
-  const [fase, setFase] = useState<"livre" | "guardando" | "conectando">("livre");
+  const [fase, setFase] = useState<"livre" | "guardando">("livre");
+  const [conectando, setConectando] = useState(false);
+  const rascunhoPronto = useRef(false);
+
+  // Rascunho: o que está sendo escrito sobrevive a trocar de aba ou fechar o app.
+  useEffect(() => {
+    AsyncStorage.getItem(RASCUNHO).then((b) => {
+      if (b) { try { const r = JSON.parse(b); setConteudo(r.conteudo ?? ""); setRefs(r.refs ?? ""); setTags(r.tags ?? ""); } catch { /* ilegível */ } }
+      rascunhoPronto.current = true;
+    }).catch(() => { rascunhoPronto.current = true; });
+  }, []);
+  useEffect(() => {
+    if (!rascunhoPronto.current) return;
+    const t = setTimeout(() => {
+      if (conteudo || refs || tags) AsyncStorage.setItem(RASCUNHO, JSON.stringify({ conteudo, refs, tags })).catch(() => undefined);
+      else AsyncStorage.removeItem(RASCUNHO).catch(() => undefined);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [conteudo, refs, tags]);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [pendenteId, setPendenteId] = useState<string | null>(null);
@@ -61,7 +82,8 @@ export function Hoje() {
   }, [offline, pendentes, semAnalise, recarregar]);
 
   async function conectar(notaId: string) {
-    setFase("conectando");
+    setConectando(true);
+    setResultado(null);
     try {
       const r = await processarNota(notaId);
       setResultado({ ...r, notaId });
@@ -71,7 +93,7 @@ export function Hoje() {
       setErro(`Nota guardada, mas a análise falhou: ${(e as Error).message}`);
     }
     await recarregar();
-    setFase("livre");
+    setConectando(false);
   }
 
   async function salvar() {
@@ -95,7 +117,10 @@ export function Hoje() {
       return;
     }
     setConteudo(""); setRefs(""); setTags("");
-    await conectar(data.id);
+    AsyncStorage.removeItem(RASCUNHO).catch(() => undefined);
+    // Libera o formulário já: a análise chega em seguida, sem prender a pessoa.
+    setFase("livre");
+    void conectar(data.id);
   }
 
   const notaResultado = resultado ? notas?.find((n) => n.id === resultado.notaId) : undefined;
@@ -133,7 +158,7 @@ export function Hoje() {
                 multiline
                 value={conteudo}
                 onChangeText={setConteudo}
-                placeholder="Escreva o que o Espírito Santo falou ao seu coração…"
+                accessibilityLabel="Sua anotação" placeholder="Escreva o que o Espírito Santo falou ao seu coração…"
                 estilo={{ borderWidth: 0, backgroundColor: "transparent", paddingHorizontal: 0, alignItems: "flex-start" }}
                 style={{ minHeight: 120, textAlignVertical: "top", fontFamily: serif, fontSize: 17, lineHeight: 25, paddingRight: 44 }}
               />
@@ -150,20 +175,20 @@ export function Hoje() {
               </View>
             </View>
             {ditado.erro ? <Text style={{ color: c.muted, fontSize: 12 }}>{ditado.erro}</Text> : null}
-            <Campo value={refs} onChangeText={setRefs} placeholder="Passagem (opcional): João 15:5, Sl 23" estilo={{ marginTop: 8 }} />
-            <Campo value={tags} onChangeText={setTags} placeholder="Tags (opcional): fé, obediência" estilo={{ marginTop: 8 }} />
+            <Campo value={refs} onChangeText={setRefs} accessibilityLabel="Passagem bíblica" placeholder="Passagem (opcional): João 15:5, Sl 23" estilo={{ marginTop: 8 }} />
+            <Campo value={tags} onChangeText={setTags} accessibilityLabel="Tags" placeholder="Tags (opcional): fé, obediência" estilo={{ marginTop: 8 }} />
             <Text style={{ color: c.muted, fontSize: 12, marginTop: 10 }}>Sem passagem? Eu sugiro uma para dar contexto.</Text>
             <Botao
-              titulo={fase === "conectando" ? "Conectando…" : "Guardar e conectar"}
+              titulo="Guardar e conectar"
               onPress={salvar}
               carregando={fase === "guardando"}
-              desabilitado={!conteudo.trim() || fase === "conectando"}
+              desabilitado={!conteudo.trim()}
               estilo={{ marginTop: 10 }}
             />
           </Entra>
 
-          {fase === "conectando" && <View style={{ marginTop: 16 }}><Pensando texto="Procurando ligações com o que você já escreveu" /></View>}
-          {analisando && fase === "livre" && <View style={{ marginTop: 16 }}><Pensando texto="Atualizando suas notas" /></View>}
+          {conectando && <View style={{ marginTop: 16 }}><Pensando texto="Procurando ligações com o que você já escreveu" /></View>}
+          {analisando && !conectando && <View style={{ marginTop: 16 }}><Pensando texto="Atualizando suas notas" /></View>}
           {aviso && <Entra style={{ marginTop: 14, backgroundColor: c.accentSoft, padding: 12, borderRadius: 12 }}><Text style={{ color: c.ink }}>{aviso}</Text></Entra>}
           {erro && (
             <Entra style={{ marginTop: 14, backgroundColor: c.accentSoft, padding: 12, borderRadius: 12 }}>

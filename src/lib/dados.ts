@@ -18,7 +18,7 @@ export function useDados() {
     setPendentes(fila.length);
     const locais: Nota[] = fila.map((f) => ({
       local: true, id: f.id, conteudo: f.conteudo, referencias: f.referencias, tags: f.tags, tags_sugeridas: [],
-      reflexao: null, passagem_ia: null, processada_em: null, created_at: f.created_at, sc_nota_refs: [],
+      reflexao: null, reflexao_fontes: null, passagem_ia: null, processada_em: null, created_at: f.created_at, sc_nota_refs: [],
     }));
     const [n, c] = await Promise.all([
       supabase.from("sc_notas").select(COLUNAS_NOTA).order("created_at", { ascending: false }),

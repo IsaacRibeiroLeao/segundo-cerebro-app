@@ -7,6 +7,9 @@ import { Botao, Campo } from "../components/ui";
 import { Entra, Flutua, Toque } from "../components/anim";
 import { FundoNos } from "../components/FundoNos";
 
+const CADASTRO_ABERTO = process.env.EXPO_PUBLIC_CADASTRO === "1";
+const URL_SITE = "https://segundo-cerebro-web-psi.vercel.app";
+
 export function Login() {
   const c = useCores();
   const [email, setEmail] = useState("");
@@ -21,6 +24,15 @@ export function Login() {
   function tremer() {
     tremor.setValue(0);
     Animated.sequence([-9, 8, -6, 4, 0].map((x) => Animated.timing(tremor, { toValue: x, duration: 60, useNativeDriver: true }))).start();
+  }
+
+  async function esqueci() {
+    setErro(null);
+    setAviso(null);
+    if (!email.trim()) { setErro("Digite seu email acima e toque de novo."); return; }
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: URL_SITE });
+    if (error) setErro(error.message);
+    else setAviso("Se esse email tiver conta, enviamos um link para criar uma nova senha (ele abre no site).");
   }
 
   async function enviar() {
@@ -78,9 +90,16 @@ export function Login() {
             <Entra delay={360}>
               <Botao titulo={criando ? "Criar conta" : "Entrar"} onPress={enviar} carregando={enviando} desabilitado={!email || senha.length < 6} estilo={{ marginTop: 22 }} />
             </Entra>
-            <Toque onPress={() => { setCriando(!criando); setErro(null); }} style={{ marginTop: 18, alignItems: "center", padding: 6 }}>
-              <Text style={{ color: c.muted }}>{criando ? "Já tenho conta" : "Primeiro acesso? Criar conta"}</Text>
-            </Toque>
+            {!criando && (
+              <Toque onPress={esqueci} style={{ marginTop: 16, alignItems: "center", padding: 6 }}>
+                <Text style={{ color: c.muted }}>Esqueci minha senha</Text>
+              </Toque>
+            )}
+            {CADASTRO_ABERTO && (
+              <Toque onPress={() => { setCriando(!criando); setErro(null); }} style={{ marginTop: 4, alignItems: "center", padding: 6 }}>
+                <Text style={{ color: c.muted }}>{criando ? "Já tenho conta" : "Primeiro acesso? Criar conta"}</Text>
+              </Toque>
+            )}
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>

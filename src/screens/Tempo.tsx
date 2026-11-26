@@ -13,7 +13,7 @@ import { Botao } from "../components/ui";
 import { Vazio } from "../components/Vazio";
 import { Entra, Pensando, Toque } from "../components/anim";
 import { TextoComCitacoes } from "../components/Citacoes";
-import { limparCitacoes } from "../components/RevisaoCard";
+import { limparCitacoes } from "../lib/texto";
 
 type Filtro = { tipo: "tag" | "livro"; valor: string | number } | null;
 const mesAno = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });

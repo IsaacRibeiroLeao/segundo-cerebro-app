@@ -6,7 +6,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { supabase } from "../lib/supabase";
-import { limparPerfil, usePerfil } from "../lib/perfil";
+import { usePerfil } from "../lib/perfil";
+import { sincronizar } from "../lib/fila";
 import type { Abas } from "../lib/types";
 import { serif, useCores } from "../theme";
 import { Avatar } from "../components/Avatar";
@@ -78,7 +79,7 @@ export function Perfil() {
         {erro ? <Entra style={{ marginTop: 14, backgroundColor: c.accentSoft, padding: 12, borderRadius: 12 }}><Text style={{ color: c.ink }}>{erro}</Text></Entra> : null}
 
         <Entra delay={120}>
-          <Toque onPress={async () => { await limparPerfil(); await supabase.auth.signOut(); }} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 24 }}>
+          <Toque onPress={async () => { await sincronizar().catch(() => undefined); await supabase.auth.signOut(); }} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 24 }}>
             <Icon nome="sair" cor={c.muted} />
             <Text style={{ color: c.muted }}>Sair da conta</Text>
           </Toque>

@@ -17,6 +17,7 @@ import { Mapa } from "./src/screens/Mapa";
 import { Tempo } from "./src/screens/Tempo";
 import { Perfil } from "./src/screens/Perfil";
 import { sincronizar } from "./src/lib/fila";
+import { limparDadosLocais } from "./src/lib/sessao";
 
 const Tab = createBottomTabNavigator<Abas>();
 
@@ -106,7 +107,10 @@ export default function App() {
       setSession(data.session);
       setCarregando(false);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    const { data: sub } = supabase.auth.onAuthStateChange((e, s) => {
+      if (e === "SIGNED_OUT") limparDadosLocais();
+      setSession(s);
+    });
     return () => sub.subscription.unsubscribe();
   }, []);
 
