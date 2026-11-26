@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useRef, useState } from "react";
 import { Image, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { supabase } from "../lib/supabase";
 import { formatarData, parseLista, processarNota, reprocessarPendentes, type ResultadoProcesso } from "../lib/cerebro";
@@ -32,6 +32,7 @@ const RASCUNHO = "sc_rascunho_v1";
 export function Hoje() {
   const c = useCores();
   const nav = useNavigation<BottomTabNavigationProp<Abas>>();
+  const rota = useRoute<RouteProp<Abas, "Hoje">>();
   const { perfil } = usePerfil();
   const nomeUsuario = perfil?.nome?.split(" ")[0];
   const { notas, offline, pendentes, recarregar } = useDados();
@@ -45,10 +46,17 @@ export function Hoje() {
   // Rascunho: o que está sendo escrito sobrevive a trocar de aba ou fechar o app.
   useEffect(() => {
     AsyncStorage.getItem(RASCUNHO).then((b) => {
-      if (b) { try { const r = JSON.parse(b); setConteudo(r.conteudo ?? ""); setRefs(r.refs ?? ""); setTags(r.tags ?? ""); } catch { /* ilegível */ } }
+      if (b) { try { const r = JSON.parse(b); setConteudo(r.conteudo ?? ""); setRefs((x) => x || r.refs || ""); setTags(r.tags ?? ""); } catch { /* ilegível */ } }
       rascunhoPronto.current = true;
     }).catch(() => { rascunhoPronto.current = true; });
   }, []);
+  // Vindo da Bíblia: preenche a passagem do que está sendo lido.
+  const refsPedidas = rota.params?.refs;
+  useEffect(() => {
+    if (!refsPedidas) return;
+    setRefs(refsPedidas);
+    nav.setParams({ refs: undefined });
+  }, [refsPedidas, nav]);
   useEffect(() => {
     if (!rascunhoPronto.current) return;
     const t = setTimeout(() => {

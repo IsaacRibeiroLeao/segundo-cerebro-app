@@ -12,6 +12,7 @@ import { Icon, type NomeIcone } from "./src/components/Icon";
 import { Login } from "./src/screens/Login";
 import { Hoje } from "./src/screens/Hoje";
 import { Notas } from "./src/screens/Notas";
+import { Biblia } from "./src/screens/Biblia";
 import { Conversar } from "./src/screens/Conversar";
 import { Mapa } from "./src/screens/Mapa";
 import { Tempo } from "./src/screens/Tempo";
@@ -71,6 +72,11 @@ function Navegacao() {
           name="Notas"
           component={Notas}
           options={{ tabBarIcon: ({ color, focused }) => <IconeAba nome="notas" cor={color} focado={focused} /> }}
+        />
+        <Tab.Screen
+          name="Biblia"
+          component={Biblia}
+          options={{ tabBarLabel: "Bíblia", tabBarIcon: ({ color, focused }) => <IconeAba nome="biblia" cor={color} focado={focused} /> }}
         />
         <Tab.Screen
           name="Conversar"

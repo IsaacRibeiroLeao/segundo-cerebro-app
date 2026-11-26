@@ -21,9 +21,9 @@ import { TagsSugeridas } from "../components/TagsSugeridas";
 const ORIGEM: Record<Reflexao["origem"], string> = { auto: "Ao guardar", edicao: "Após editar", manual: "Pedida por você" };
 
 
-function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, aoAbrirOutra, recarregar }: {
+function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, aoAbrirOutra, aoApagar, recarregar }: {
   nota: Nota; notas: Nota[]; conexoes: Conexao[]; aberta: boolean; destaque: boolean; indice: number;
-  aoAlternar: () => void; aoAbrirOutra: (id: string) => void; recarregar: () => Promise<void>;
+  aoAlternar: () => void; aoAbrirOutra: (id: string) => void; aoApagar: () => void; recarregar: () => Promise<void>;
 }) {
   const c = useCores();
   const [editando, setEditando] = useState(false);
@@ -75,12 +75,9 @@ function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, a
   }
 
   function apagar() {
-    Alert.alert("Apagar esta nota?", "Ela e as suas conexões serão removidas e não dá para desfazer.", [
+    Alert.alert("Apagar esta nota?", "Você terá alguns segundos para desfazer.", [
       { text: "Cancelar", style: "cancel" },
-      { text: "Apagar", style: "destructive", onPress: async () => {
-        const { error } = await supabase.from("sc_notas").delete().eq("id", nota.id);
-        if (error) setErro(error.message); else await recarregar();
-      } },
+      { text: "Apagar", style: "destructive", onPress: aoApagar },
     ]);
   }
 
@@ -180,6 +177,34 @@ export function Notas() {
   const notasRef = useRef<Nota[] | null>(null);
   useEffect(() => { notasRef.current = notas; }, [notas]);
 
+  // Apagar com desfazer: a nota some da lista na hora e só é apagada de verdade depois de 6 s.
+  const [ocultas, setOcultas] = useState<Set<string>>(new Set());
+  const [desfazer, setDesfazer] = useState<string | null>(null);
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const recarregarRef = useRef(recarregar);
+  useEffect(() => { recarregarRef.current = recarregar; }, [recarregar]);
+
+  async function apagarDeVez(id: string) {
+    timers.current.delete(id);
+    const { error } = await supabase.from("sc_notas").delete().eq("id", id);
+    if (error) Alert.alert("Não consegui apagar", error.message);
+    setOcultas((o) => { const n = new Set(o); n.delete(id); return n; });
+    setDesfazer((d) => (d === id ? null : d));
+    await recarregarRef.current();
+  }
+  function agendarExclusao(id: string) {
+    setOcultas((o) => new Set(o).add(id));
+    setDesfazer(id);
+    timers.current.set(id, setTimeout(() => { apagarDeVez(id); }, 6000));
+  }
+  function desfazerExclusao(id: string) {
+    const t = timers.current.get(id);
+    if (t) clearTimeout(t);
+    timers.current.delete(id);
+    setOcultas((o) => { const n = new Set(o); n.delete(id); return n; });
+    setDesfazer(null);
+  }
+
   useEffect(() => {
     const q = busca.trim();
     if (q.length < 2) { setAchados(null); return; }
@@ -204,13 +229,13 @@ export function Notas() {
   }, [notas]);
 
   const lista = useMemo(() => {
-    let base = notas ?? [];
+    let base = (notas ?? []).filter((n) => !ocultas.has(n.id));
     if (achados) {
       const ordem = new Map(achados.ids.map((id, i) => [id, i]));
       base = base.filter((n) => ordem.has(n.id)).sort((a, b) => ordem.get(a.id)! - ordem.get(b.id)!);
     }
     return tag ? base.filter((n) => n.tags.includes(tag)) : base;
-  }, [notas, achados, tag]);
+  }, [notas, achados, tag, ocultas]);
 
   // Abre a nota pedida por outra tela.
   const alvo = rota.params?.notaId;
@@ -268,10 +293,16 @@ export function Notas() {
           ListEmptyComponent={notas ? <Vazio texto={notas.length === 0 ? "Você ainda não escreveu nenhuma nota." : "Nada encontrado."} /> : undefined}
           renderItem={({ item, index }) => (
             <Cartao nota={item} notas={notas ?? []} conexoes={conexoes} indice={index} aberta={aberta === item.id} destaque={destaque === item.id}
-              aoAlternar={() => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setAberta(aberta === item.id ? null : item.id); }} aoAbrirOutra={abrirOutra} recarregar={recarregar} />
+              aoAlternar={() => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setAberta(aberta === item.id ? null : item.id); }} aoAbrirOutra={abrirOutra} aoApagar={() => agendarExclusao(item.id)} recarregar={recarregar} />
           )}
         />
       </KeyboardAvoidingView>
+      {desfazer && (
+        <View style={{ position: "absolute", left: 20, right: 20, bottom: 92, flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: c.ink, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12 }}>
+          <Text style={{ color: c.paper }}>Nota apagada.</Text>
+          <Toque onPress={() => desfazerExclusao(desfazer)}><Text style={{ color: c.accentSoft, fontWeight: "700" }}>Desfazer</Text></Toque>
+        </View>
+      )}
     </SafeAreaView>
   );
 }

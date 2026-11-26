@@ -1,7 +1,7 @@
 import { Image } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
-export type NomeIcone = "hoje" | "notas" | "conversar" | "mapa" | "tempo" | "microfone" | "baixar" | "refazer" | "sair" | "apagar" | "editar";
+export type NomeIcone = "hoje" | "notas" | "conversar" | "mapa" | "tempo" | "microfone" | "baixar" | "refazer" | "sair" | "apagar" | "editar" | "biblia";
 
 const imagens = {
   hoje: require("../../assets/icons/tab-hoje.png"),
@@ -18,6 +18,7 @@ const tracos = {
   sair: "M10 4H5v16h5M15 8l4 4-4 4M19 12H9",
   apagar: "M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13",
   editar: "M4 20l1-5L16 4l4 4L9 19z",
+  biblia: "M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11M10 8h5M12.5 6v5",
 } as const;
 
 export function Icon({ nome, cor, tamanho = 22 }: { nome: NomeIcone; cor: string; tamanho?: number }) {
