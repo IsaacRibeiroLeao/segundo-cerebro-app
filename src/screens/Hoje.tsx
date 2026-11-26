@@ -10,6 +10,8 @@ import { guardarNaFila, sincronizar } from "../lib/fila";
 import { type Abas, passagemPrincipal } from "../lib/types";
 import { serif, useCores } from "../theme";
 import { Botao, Campo } from "../components/ui";
+import { Avatar } from "../components/Avatar";
+import { usePerfil } from "../lib/perfil";
 import { Vazio } from "../components/Vazio";
 import { Entra, Pensando, Respira, Toque } from "../components/anim";
 import { Icon } from "../components/Icon";
@@ -27,6 +29,8 @@ function saudacao() {
 export function Hoje() {
   const c = useCores();
   const nav = useNavigation<BottomTabNavigationProp<Abas>>();
+  const { perfil } = usePerfil();
+  const nomeUsuario = perfil?.nome?.split(" ")[0];
   const { notas, offline, pendentes, recarregar } = useDados();
   const [conteudo, setConteudo] = useState("");
   const [refs, setRefs] = useState("");
@@ -101,12 +105,17 @@ export function Hoje() {
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: c.paper }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 110 }} keyboardShouldPersistTaps="handled">
-          <Entra>
-            <Text style={{ color: c.muted, fontSize: 13 }}>
-              {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
-            </Text>
-            <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink, marginTop: 2 }}>{saudacao()}.</Text>
-            <Text style={{ color: c.muted, marginTop: 4 }}>O que você leu ou sentiu hoje?</Text>
+          <Entra style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={{ color: c.muted, fontSize: 13 }}>
+                {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
+              </Text>
+              <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink, marginTop: 2 }}>{saudacao()}{nomeUsuario ? `, ${nomeUsuario}` : ""}.</Text>
+              <Text style={{ color: c.muted, marginTop: 4 }}>O que você leu ou sentiu hoje?</Text>
+            </View>
+            <Toque onPress={() => nav.navigate("Perfil")} accessibilityLabel="Abrir perfil" style={{ shadowColor: "#3c2814", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4, borderRadius: 24 }}>
+              <Avatar tamanho={48} />
+            </Toque>
           </Entra>
 
           {(offline || pendentes > 0) && (

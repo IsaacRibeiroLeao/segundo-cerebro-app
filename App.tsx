@@ -15,6 +15,7 @@ import { Notas } from "./src/screens/Notas";
 import { Conversar } from "./src/screens/Conversar";
 import { Mapa } from "./src/screens/Mapa";
 import { Tempo } from "./src/screens/Tempo";
+import { Perfil } from "./src/screens/Perfil";
 import { sincronizar } from "./src/lib/fila";
 
 const Tab = createBottomTabNavigator<Abas>();
@@ -84,6 +85,11 @@ function Navegacao() {
           name="Tempo"
           component={Tempo}
           options={{ tabBarIcon: ({ color, focused }) => <IconeAba nome="tempo" cor={color} focado={focused} /> }}
+        />
+        <Tab.Screen
+          name="Perfil"
+          component={Perfil}
+          options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }}
         />
       </Tab.Navigator>
     </NavigationContainer>

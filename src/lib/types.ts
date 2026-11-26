@@ -84,4 +84,5 @@ export type Abas = {
   Conversar: undefined;
   Mapa: undefined;
   Tempo: undefined;
+  Perfil: undefined;
 };

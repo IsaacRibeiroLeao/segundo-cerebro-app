@@ -90,3 +90,28 @@ export function Flutua({ children }: { children: ReactNode }) {
   }, [v]);
   return <Animated.View style={{ transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -8] }) }] }}>{children}</Animated.View>;
 }
+
+// Bolha "digitando": três pontos que pulam em sequência.
+export function Digitando() {
+  const c = useCores();
+  const pontos = useRef([0, 1, 2].map(() => new Animated.Value(0))).current;
+  useEffect(() => {
+    const loops = pontos.map((p, i) =>
+      Animated.loop(Animated.sequence([
+        Animated.delay(i * 150),
+        Animated.timing(p, { toValue: 1, duration: 280, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(p, { toValue: 0, duration: 280, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+        Animated.delay(450 - i * 150),
+      ])),
+    );
+    loops.forEach((l) => l.start());
+    return () => loops.forEach((l) => l.stop());
+  }, [pontos]);
+  return (
+    <View accessibilityRole="progressbar" accessibilityLabel="Claude está digitando" style={{ flexDirection: "row", gap: 6, alignItems: "center", height: 20 }}>
+      {pontos.map((p, i) => (
+        <Animated.View key={i} style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: c.accent, opacity: p.interpolate({ inputRange: [0, 1], outputRange: [0.45, 1] }), transform: [{ translateY: p.interpolate({ inputRange: [0, 1], outputRange: [0, -8] }) }] }} />
+      ))}
+    </View>
+  );
+}

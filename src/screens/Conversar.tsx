@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native";
+import { FlatList, Image, KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { conversar } from "../lib/cerebro";
@@ -7,7 +7,8 @@ import type { Mensagem } from "../lib/types";
 import { serif, useCores } from "../theme";
 import { Botao, Campo } from "../components/ui";
 import { ListaFontes, TextoComCitacoes } from "../components/Citacoes";
-import { Entra, Pensando } from "../components/anim";
+import { Digitando, Entra } from "../components/anim";
+import { Avatar } from "../components/Avatar";
 
 const SUGESTOES = [
   "O que mais se repete nas minhas anotações?",
@@ -106,39 +107,32 @@ export function Conversar() {
           }
           renderItem={({ item: m }) =>
             m.role === "user" ? (
-              <View
-                style={{
-                  alignSelf: "flex-end",
-                  maxWidth: "85%",
-                  backgroundColor: c.accent,
-                  borderRadius: 18,
-                  borderBottomRightRadius: 5,
-                  padding: 13,
-                }}
-              >
-                <Text style={{ color: c.onAccent, fontSize: 16, lineHeight: 23 }}>{m.content}</Text>
-              </View>
+              <Entra style={{ alignSelf: "flex-end", maxWidth: "90%", flexDirection: "row", alignItems: "flex-end", gap: 8 }}>
+                <View style={{ flexShrink: 1, backgroundColor: c.accent, borderRadius: 18, borderBottomRightRadius: 5, padding: 13 }}>
+                  <Text style={{ color: c.onAccent, fontSize: 16, lineHeight: 23 }}>{m.content}</Text>
+                </View>
+                <Avatar tamanho={30} />
+              </Entra>
             ) : (
-              <View
-                style={{
-                  alignSelf: "flex-start",
-                  maxWidth: "94%",
-                  backgroundColor: c.card,
-                  borderColor: c.line,
-                  borderWidth: 1,
-                  borderRadius: 18,
-                  borderBottomLeftRadius: 5,
-                  padding: 13,
-                }}
-              >
-                <TextoComCitacoes texto={m.content} fontes={m.fontes ?? []} />
-                <ListaFontes fontes={(m.fontes ?? []).filter((f) => m.content.includes(`[${f.n}]`))} />
-              </View>
+              <Entra style={{ alignSelf: "flex-start", maxWidth: "96%", flexDirection: "row", alignItems: "flex-end", gap: 8 }}>
+                <Image source={require("../../assets/logo.png")} style={{ width: 30, height: 30, borderRadius: 15 }} />
+                <View style={{ flexShrink: 1, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 18, borderBottomLeftRadius: 5, padding: 13 }}>
+                  <TextoComCitacoes texto={m.content} fontes={m.fontes ?? []} />
+                  <ListaFontes fontes={(m.fontes ?? []).filter((f) => m.content.includes(`[${f.n}]`))} />
+                </View>
+              </Entra>
             )
           }
           ListFooterComponent={
             <View>
-              {enviando && <View style={{ marginTop: 8 }}><Pensando texto="Pensando junto com você" /></View>}
+              {enviando && (
+                <Entra style={{ flexDirection: "row", alignItems: "flex-end", gap: 8, marginTop: 8 }}>
+                  <Image source={require("../../assets/logo.png")} style={{ width: 30, height: 30, borderRadius: 15 }} />
+                  <View style={{ backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 18, borderBottomLeftRadius: 5, paddingHorizontal: 16, paddingVertical: 16 }}>
+                    <Digitando />
+                  </View>
+                </Entra>
+              )}
               {erro && (
                 <Text style={{ color: c.ink, backgroundColor: c.accentSoft, padding: 12, borderRadius: 12, marginTop: 8 }}>
                   {erro}

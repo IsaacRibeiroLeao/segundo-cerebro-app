@@ -2,7 +2,7 @@
   "expo": {
     "name": "Segundo Cérebro",
     "slug": "segundo-cerebro",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -18,7 +18,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.isaacleaodev.segundocerebro",
-      "versionCode": 3
+      "versionCode": 4
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -46,7 +46,13 @@
           ]
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permita o acesso às fotos para escolher sua foto de perfil."
+        }
+      ]
     ]
   }
 }

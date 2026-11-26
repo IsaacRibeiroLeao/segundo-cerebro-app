@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, FlatList, KeyboardAvoidingView, Platform, ScrollView, Share, Text, View } from "react-native";
+import { Alert, LayoutAnimation, FlatList, KeyboardAvoidingView, Platform, ScrollView, Share, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
@@ -254,7 +254,7 @@ export function Notas() {
           ListEmptyComponent={notas ? <Vazio texto={notas.length === 0 ? "Você ainda não escreveu nenhuma nota." : "Nada encontrado."} /> : undefined}
           renderItem={({ item, index }) => (
             <Cartao nota={item} notas={notas ?? []} conexoes={conexoes} indice={index} aberta={aberta === item.id} destaque={destaque === item.id}
-              aoAlternar={() => setAberta(aberta === item.id ? null : item.id)} aoAbrirOutra={abrirOutra} recarregar={recarregar} />
+              aoAlternar={() => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setAberta(aberta === item.id ? null : item.id); }} aoAbrirOutra={abrirOutra} recarregar={recarregar} />
           )}
         />
       </KeyboardAvoidingView>
