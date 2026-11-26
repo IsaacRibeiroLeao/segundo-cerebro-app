@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, AppState, Image, View, useColorScheme } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { DarkTheme, DefaultTheme, NavigationContainer } from "@react-navigation/native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { DarkTheme, DefaultTheme, NavigationContainer, useRoute, type RouteProp } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./src/lib/supabase";
 import type { Abas } from "./src/lib/types";
 import { useCores } from "./src/theme";
-import { type NomeIcone } from "./src/components/Icon";
+import { Icon, type NomeIcone } from "./src/components/Icon";
 import { Tile } from "./src/components/Tile";
 import { Login } from "./src/screens/Login";
 import { Hoje } from "./src/screens/Hoje";
@@ -17,11 +17,49 @@ import { Biblia } from "./src/screens/Biblia";
 import { Conversar } from "./src/screens/Conversar";
 import { Mapa } from "./src/screens/Mapa";
 import { Tempo } from "./src/screens/Tempo";
+import { Toque } from "./src/components/anim";
+import { Text } from "react-native";
 import { Perfil } from "./src/screens/Perfil";
 import { sincronizar } from "./src/lib/fila";
 import { limparDadosLocais } from "./src/lib/sessao";
 
 const Tab = createBottomTabNavigator<Abas>();
+
+// Notas e Linha do tempo são duas visões da mesma coisa: um seletor no topo alterna entre elas.
+function NotasETempo() {
+  const c = useCores();
+  const [modo, setModo] = useState<"lista" | "tempo">("lista");
+  const rota = useRoute<RouteProp<Abas, "Notas">>();
+  useEffect(() => { if (rota.params?.notaId) setModo("lista"); }, [rota.params?.notaId]);
+  return (
+    <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: c.paper }}>
+      <View style={{ alignSelf: "flex-start", marginLeft: 20, marginTop: 10, flexDirection: "row", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 14, padding: 3 }}>
+        {([["lista", "Lista"], ["tempo", "Linha do tempo"]] as const).map(([k, nome]) => (
+          <Toque key={k} onPress={() => setModo(k)} style={{ borderRadius: 11, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: modo === k ? c.accent : "transparent" }}>
+            <Text style={{ fontSize: 12, fontWeight: modo === k ? "700" : "500", color: modo === k ? c.onAccent : c.muted }}>{nome}</Text>
+          </Toque>
+        ))}
+      </View>
+      {modo === "lista" ? <Notas /> : <Tempo />}
+    </SafeAreaView>
+  );
+}
+
+// Botão central da Bíblia: branco, maior e levantado em relação aos outros.
+function BotaoBiblia({ onPress, focado }: { onPress?: () => void; focado: boolean }) {
+  const c = useCores();
+  return (
+    <View style={{ flex: 1, alignItems: "center" }}>
+      <Toque onPress={onPress} accessibilityLabel="Bíblia" style={{
+        marginTop: -26, width: 66, height: 66, borderRadius: 33, backgroundColor: "#ffffff", alignItems: "center", justifyContent: "center",
+        borderWidth: 3, borderColor: focado ? c.accent : c.paper, elevation: 12, shadowColor: "#000", shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 5 },
+      }}>
+        <Icon nome="biblia" cor={c.accent} tamanho={32} />
+      </Toque>
+      <Text style={{ fontSize: 11, fontWeight: "600", marginTop: 3, color: focado ? c.accent : c.muted }}>Bíblia</Text>
+    </View>
+  );
+}
 
 // Ícone da aba: cresce um pouco e ganha um ponto quando está ativo.
 function IconeAba({ nome, focado }: { nome: NomeIcone; cor?: string; focado: boolean }) {
@@ -71,13 +109,15 @@ function Navegacao() {
         />
         <Tab.Screen
           name="Notas"
-          component={Notas}
+          component={NotasETempo}
           options={{ tabBarIcon: ({ color, focused }) => <IconeAba nome="notas" cor={color} focado={focused} /> }}
         />
         <Tab.Screen
           name="Biblia"
           component={Biblia}
-          options={{ tabBarLabel: "Bíblia", tabBarIcon: ({ color, focused }) => <IconeAba nome="biblia" cor={color} focado={focused} /> }}
+          options={({ navigation }) => ({
+            tabBarButton: () => <BotaoBiblia focado={navigation.isFocused()} onPress={() => navigation.navigate("Biblia")} />,
+          })}
         />
         <Tab.Screen
           name="Conversar"
@@ -88,11 +128,6 @@ function Navegacao() {
           name="Mapa"
           component={Mapa}
           options={{ tabBarIcon: ({ color, focused }) => <IconeAba nome="mapa" cor={color} focado={focused} /> }}
-        />
-        <Tab.Screen
-          name="Tempo"
-          component={Tempo}
-          options={{ tabBarIcon: ({ color, focused }) => <IconeAba nome="tempo" cor={color} focado={focused} /> }}
         />
         <Tab.Screen
           name="Perfil"
