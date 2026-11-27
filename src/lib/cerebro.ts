@@ -34,6 +34,9 @@ export const reconectar = (notaId: string) => chamar<{ conexoes: number }>({ aca
 export const buscar = (consulta: string) =>
   chamar<{ semantica: boolean; resultados: { id: string; score: number }[] }>({ acao: "buscar", consulta });
 
+export const prosear = (mensagem: string, historico: { role: string; content: string }[]) =>
+  chamar<{ resposta: string; percepcao: { texto: string; passagem: string } | null; fontes: Fonte[] }>({ acao: "prosear", mensagem, historico });
+
 export const conversar = (mensagem: string, historico: { role: string; content: string }[]) =>
   chamar<{ resposta: string; fontes: Fonte[] }>({ acao: "conversar", mensagem, historico });
 

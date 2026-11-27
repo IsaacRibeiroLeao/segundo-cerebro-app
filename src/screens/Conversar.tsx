@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { FlatList, Image, KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { conversar } from "../lib/cerebro";
-import type { Mensagem } from "../lib/types";
+import { conversar, processarNota, prosear } from "../lib/cerebro";
+import { supabase } from "../lib/supabase";
+import type { Mensagem, Percepcao } from "../lib/types";
 import { serif, useCores } from "../theme";
 import { Botao, Campo } from "../components/ui";
 import { ListaFontes, TextoComCitacoes } from "../components/Citacoes";
@@ -18,10 +19,15 @@ const SUGESTOES = [
 ];
 
 const CHAVE = "sc_chat_v1";
+const CHAVE_PROSA = "sc_prosa_v1";
+const CHAVE_MODO = "sc_chat_modo_v1";
+const ABERTURAS = ["Estou aqui. O que ficou no seu coração hoje?", "Sobre o que você está pensando ultimamente?", "Teve algo na leitura que não saiu da sua cabeça?"];
+type Modo = "conversa" | "notas";
 
 export function Conversar() {
   const c = useCores();
   const lista = useRef<FlatList<Mensagem>>(null);
+  const [modo, setModo] = useState<Modo>("conversa");
   const [msgs, setMsgs] = useState<Mensagem[]>([]);
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -29,9 +35,12 @@ export function Conversar() {
   const [pronto, setPronto] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(CHAVE)
-      .then((s) => {
-        if (s) setMsgs(JSON.parse(s));
+    AsyncStorage.getItem(CHAVE_MODO)
+      .then(async (m) => {
+        const atual: Modo = m === "notas" ? "notas" : "conversa";
+        setModo(atual);
+        const salvo = await AsyncStorage.getItem(atual === "notas" ? CHAVE : CHAVE_PROSA);
+        if (salvo) setMsgs(JSON.parse(salvo));
       })
       .catch(() => {})
       .finally(() => setPronto(true));
@@ -39,9 +48,31 @@ export function Conversar() {
 
   useEffect(() => {
     if (!pronto) return;
-    AsyncStorage.setItem(CHAVE, JSON.stringify(msgs.slice(-40))).catch(() => {});
+    AsyncStorage.setItem(modo === "notas" ? CHAVE : CHAVE_PROSA, JSON.stringify(msgs.slice(-40))).catch(() => {});
     setTimeout(() => lista.current?.scrollToEnd({ animated: true }), 100);
-  }, [msgs, pronto]);
+  }, [msgs, pronto, modo]);
+
+  async function trocarModo(novo: Modo) {
+    if (novo === modo) return;
+    await AsyncStorage.setItem(CHAVE_MODO, novo).catch(() => {});
+    const salvo = await AsyncStorage.getItem(novo === "notas" ? CHAVE : CHAVE_PROSA).catch(() => null);
+    setMsgs(salvo ? JSON.parse(salvo) : []);
+    setErro(null);
+    setModo(novo);
+  }
+
+  async function decidirPercepcao(i: number, p: Percepcao, guardar: boolean) {
+    if (guardar) {
+      const { data, error } = await supabase
+        .from("sc_notas")
+        .insert({ conteudo: `Percepção numa conversa: ${p.texto}`, referencias: p.passagem ? [p.passagem] : [], tags: ["percepção"] })
+        .select("id")
+        .single();
+      if (error || !data) { setErro(error?.message ?? "Não foi possível guardar."); return; }
+      void processarNota(data.id).catch(() => undefined);
+    }
+    setMsgs((m) => m.map((x, j) => (j === i && x.percepcao ? { ...x, percepcao: { ...x.percepcao, estado: guardar ? "guardada" : "dispensada" } } : x)));
+  }
 
   async function enviar(pergunta: string) {
     const q = pergunta.trim();
@@ -52,8 +83,13 @@ export function Conversar() {
     setMsgs((m) => [...m, { role: "user", content: q }]);
     setEnviando(true);
     try {
-      const r = await conversar(q, historico);
-      setMsgs((m) => [...m, { role: "assistant", content: r.resposta, fontes: r.fontes }]);
+      if (modo === "conversa") {
+        const r = await prosear(q, historico);
+        setMsgs((m) => [...m, { role: "assistant", content: r.resposta, fontes: r.fontes, percepcao: r.percepcao }]);
+      } else {
+        const r = await conversar(q, historico);
+        setMsgs((m) => [...m, { role: "assistant", content: r.resposta, fontes: r.fontes }]);
+      }
     } catch (e) {
       setErro((e as Error).message);
     }
@@ -79,10 +115,17 @@ export function Conversar() {
                   </Pressable>
                 )}
               </View>
-              <Text style={{ color: c.muted, marginTop: 2 }}>Pense junto com as suas anotações.</Text>
+              <View style={{ flexDirection: "row", alignSelf: "flex-start", marginTop: 10, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 14, padding: 3 }}>
+                {([["conversa", "Conversa"], ["notas", "Perguntar às notas"]] as const).map(([k, nome]) => (
+                  <Pressable key={k} onPress={() => trocarModo(k)} style={{ borderRadius: 11, paddingHorizontal: 11, paddingVertical: 6, backgroundColor: modo === k ? c.accent : "transparent" }}>
+                    <Text style={{ fontSize: 13, fontWeight: modo === k ? "700" : "500", color: modo === k ? c.onAccent : c.muted }}>{nome}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Text style={{ color: c.muted, marginTop: 8 }}>{modo === "conversa" ? "Converse como com um amigo. Se eu perceber algo, aviso." : "Pense junto com as suas anotações."}</Text>
               {msgs.length === 0 && pronto && (
                 <View style={{ marginTop: 18, gap: 8 }}>
-                  {SUGESTOES.map((s) => (
+                  {(modo === "conversa" ? ABERTURAS : SUGESTOES).map((s) => (
                     <Pressable
                       key={s}
                       onPress={() => enviar(s)}
@@ -98,14 +141,15 @@ export function Conversar() {
                     </Pressable>
                   ))}
                   <Text style={{ color: c.muted, fontSize: 12, marginTop: 4 }}>
-                    Eu respondo com base no que você escreveu, e levanto conexões e perguntas. A interpretação
-                    continua sendo sua.
+                    {modo === "conversa"
+                      ? "Eu escuto, lembro do que você já escreveu e, de vez em quando, devolvo uma percepção. Ela é uma hipótese para você levar em oração; quem discerne é você."
+                      : "Eu respondo com base no que você escreveu, e levanto conexões e perguntas. A interpretação continua sendo sua."}
                   </Text>
                 </View>
               )}
             </View>
           }
-          renderItem={({ item: m }) =>
+          renderItem={({ item: m, index: i }) =>
             m.role === "user" ? (
               <Entra style={{ alignSelf: "flex-end", maxWidth: "90%", flexDirection: "row", alignItems: "flex-end", gap: 8 }}>
                 <View style={{ flexShrink: 1, backgroundColor: c.accent, borderRadius: 18, borderBottomRightRadius: 5, padding: 13 }}>
@@ -119,6 +163,21 @@ export function Conversar() {
                 <View style={{ flexShrink: 1, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 18, borderBottomLeftRadius: 5, padding: 13 }}>
                   <TextoComCitacoes texto={m.content} fontes={m.fontes ?? []} />
                   <ListaFontes fontes={(m.fontes ?? []).filter((f) => m.content.includes(`[${f.n}]`))} />
+                  {m.percepcao && m.percepcao.estado !== "dispensada" ? (
+                    <View style={{ marginTop: 10, backgroundColor: c.accentSoft, borderColor: c.accent, borderWidth: 1, borderRadius: 12, padding: 11 }}>
+                      <Text style={{ color: c.accent, fontSize: 11, fontWeight: "700", letterSpacing: 0.8 }}>✦ PERCEBI ALGO</Text>
+                      <Text style={{ fontFamily: serif, color: c.ink, fontSize: 15, lineHeight: 22, marginTop: 4 }}>{m.percepcao.texto}</Text>
+                      {m.percepcao.passagem ? <Text style={{ color: c.muted, fontSize: 12, marginTop: 4 }}>{m.percepcao.passagem}</Text> : null}
+                      {m.percepcao.estado === "guardada" ? (
+                        <Text style={{ color: c.accent, fontSize: 12, marginTop: 8 }}>✓ Guardada nas suas notas</Text>
+                      ) : (
+                        <View style={{ flexDirection: "row", gap: 16, marginTop: 8 }}>
+                          <Pressable onPress={() => decidirPercepcao(i, m.percepcao!, true)}><Text style={{ color: c.accent, fontWeight: "700" }}>Guardar como nota</Text></Pressable>
+                          <Pressable onPress={() => decidirPercepcao(i, m.percepcao!, false)}><Text style={{ color: c.muted }}>Dispensar</Text></Pressable>
+                        </View>
+                      )}
+                    </View>
+                  ) : null}
                 </View>
               </Entra>
             )
@@ -145,7 +204,7 @@ export function Conversar() {
           <Campo
             value={texto}
             onChangeText={setTexto}
-            placeholder="Pergunte algo sobre suas notas…"
+            placeholder={modo === "conversa" ? "Conte o que está no seu coração…" : "Pergunte algo sobre suas notas…"}
             estilo={{ flex: 1 }}
             onSubmitEditing={() => enviar(texto)}
             returnKeyType="send"
