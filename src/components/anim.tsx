@@ -108,7 +108,7 @@ export function Digitando() {
     return () => loops.forEach((l) => l.stop());
   }, [pontos]);
   return (
-    <View accessibilityRole="progressbar" accessibilityLabel="Claude está digitando" style={{ flexDirection: "row", gap: 6, alignItems: "center", height: 20 }}>
+    <View accessibilityRole="progressbar" accessibilityLabel="Claude is typing" style={{ flexDirection: "row", gap: 6, alignItems: "center", height: 20 }}>
       {pontos.map((p, i) => (
         <Animated.View key={i} style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: c.accent, opacity: p.interpolate({ inputRange: [0, 1], outputRange: [0.45, 1] }), transform: [{ translateY: p.interpolate({ inputRange: [0, 1], outputRange: [0, -8] }) }] }} />
       ))}

@@ -59,10 +59,10 @@ export function exportarMarkdown(notas: Nota[]) {
   return [...notas]
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
     .map((n) => {
-      const data = new Date(n.created_at).toLocaleDateString("pt-BR");
-      const refs = n.sc_nota_refs.map((r) => (r.origem === "ia" ? `${r.rotulo} (sugerida)` : r.rotulo)).join(", ");
+      const data = new Date(n.created_at).toLocaleDateString("en-US");
+      const refs = n.sc_nota_refs.map((r) => (r.origem === "ia" ? `${r.rotulo} (suggested)` : r.rotulo)).join(", ");
       const tags = n.tags.map((t) => `#${t}`).join(" ");
-      return [`## ${data}${refs ? ` — ${refs}` : ""}`, tags, "", n.conteudo, n.reflexao ? `\n> Reflexão: ${n.reflexao}` : ""]
+      return [`## ${data}${refs ? ` — ${refs}` : ""}`, tags, "", n.conteudo, n.reflexao ? `\n> Reflection: ${n.reflexao}` : ""]
         .filter((l) => l !== "")
         .join("\n");
     })

@@ -29,10 +29,10 @@ export function Login() {
   async function esqueci() {
     setErro(null);
     setAviso(null);
-    if (!email.trim()) { setErro("Digite seu email acima e toque de novo."); return; }
+    if (!email.trim()) { setErro("Enter your email above and tap again."); return; }
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: URL_SITE });
     if (error) setErro(error.message);
-    else setAviso("Se esse email tiver conta, enviamos um link para criar uma nova senha (ele abre no site).");
+    else setAviso("If that email has an account, we sent a link to set a new password (it opens on the website).");
   }
 
   async function enviar() {
@@ -42,10 +42,10 @@ export function Login() {
     if (criando) {
       const { data, error } = await supabase.auth.signUp({ email: email.trim(), password: senha });
       if (error) { setErro(error.message); tremer(); }
-      else if (!data.session) setAviso("Conta criada. Confirme o email que enviamos e depois entre.");
+      else if (!data.session) setAviso("Account created. Confirm the email we sent, then sign in.");
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: senha });
-      if (error) { setErro("Email ou senha incorretos."); tremer(); }
+      if (error) { setErro("Incorrect email or password."); tremer(); }
     }
     setEnviando(false);
   }
@@ -62,8 +62,8 @@ export function Login() {
                   <Image source={require("../../assets/logo.png")} style={{ width: 92, height: 92, borderRadius: 24 }} />
                 </Flutua>
               </Entra>
-              <Entra delay={100}><Text style={{ fontFamily: serif, fontSize: 30, color: c.ink, marginTop: 18 }}>Segundo Cérebro</Text></Entra>
-              <Entra delay={170}><Text style={{ color: c.muted, marginTop: 4, marginBottom: 24 }}>Suas anotações, conectadas.</Text></Entra>
+              <Entra delay={100}><Text style={{ fontFamily: serif, fontSize: 30, color: c.ink, marginTop: 18 }}>Second Brain</Text></Entra>
+              <Entra delay={170}><Text style={{ color: c.muted, marginTop: 4, marginBottom: 24 }}>Your notes, connected.</Text></Entra>
             </View>
 
             <Entra delay={240}>
@@ -74,13 +74,13 @@ export function Login() {
                 icone="notas"
                 value={senha}
                 onChangeText={setSenha}
-                placeholder="Senha"
+                placeholder="Password"
                 secureTextEntry={!ver}
                 autoCapitalize="none"
                 autoComplete={criando ? "new-password" : "current-password"}
-                accessibilityLabel="Senha"
+                accessibilityLabel="Password"
                 onSubmitEditing={enviar}
-                direita={<Toque onPress={() => setVer(!ver)} accessibilityLabel={ver ? "Ocultar senha" : "Mostrar senha"}><Text style={{ color: c.muted, fontSize: 12 }}>{ver ? "ocultar" : "ver"}</Text></Toque>}
+                direita={<Toque onPress={() => setVer(!ver)} accessibilityLabel={ver ? "Hide password" : "Show password"}><Text style={{ color: c.muted, fontSize: 12 }}>{ver ? "ocultar" : "ver"}</Text></Toque>}
               />
             </Entra>
 
@@ -88,16 +88,16 @@ export function Login() {
             {aviso && <Entra><Text style={{ color: c.sage, marginTop: 12 }}>{aviso}</Text></Entra>}
 
             <Entra delay={360}>
-              <Botao titulo={criando ? "Criar conta" : "Entrar"} onPress={enviar} carregando={enviando} desabilitado={!email || senha.length < 6} estilo={{ marginTop: 22 }} />
+              <Botao titulo={criando ? "Create account" : "Entrar"} onPress={enviar} carregando={enviando} desabilitado={!email || senha.length < 6} estilo={{ marginTop: 22 }} />
             </Entra>
             {!criando && (
               <Toque onPress={esqueci} style={{ marginTop: 16, alignItems: "center", padding: 6 }}>
-                <Text style={{ color: c.muted }}>Esqueci minha senha</Text>
+                <Text style={{ color: c.muted }}>Forgot my password</Text>
               </Toque>
             )}
             {CADASTRO_ABERTO && (
               <Toque onPress={() => { setCriando(!criando); setErro(null); }} style={{ marginTop: 4, alignItems: "center", padding: 6 }}>
-                <Text style={{ color: c.muted }}>{criando ? "Já tenho conta" : "Primeiro acesso? Criar conta"}</Text>
+                <Text style={{ color: c.muted }}>{criando ? "I already have an account" : "First time? Create account"}</Text>
               </Toque>
             )}
           </Animated.View>

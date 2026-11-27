@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
 
-// Ditado por voz (reconhecimento do próprio Android), em português do Brasil.
-export function useDitado(aoFinalizarTrecho: (texto: string) => void) {
+// Ditado por voz (reconhecimento do próprio Android), em inglês ou português.
+export function useDitado(aoFinalizarTrecho: (texto: string) => void, idioma = "en-US") {
   const [ativo, setAtivo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const cb = useRef(aoFinalizarTrecho);
@@ -17,7 +17,7 @@ export function useDitado(aoFinalizarTrecho: (texto: string) => void) {
   useSpeechRecognitionEvent("end", () => setAtivo(false));
   useSpeechRecognitionEvent("error", (ev) => {
     setAtivo(false);
-    if (ev.error !== "aborted" && ev.error !== "no-speech") setErro("Não consegui ouvir agora. Tente de novo.");
+    if (ev.error !== "aborted" && ev.error !== "no-speech") setErro("I couldn't hear you just now. Try again.");
   });
 
   async function alternar() {
@@ -28,10 +28,10 @@ export function useDitado(aoFinalizarTrecho: (texto: string) => void) {
     setErro(null);
     const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
     if (!perm.granted) {
-      setErro("Permita o microfone nas configurações do aparelho.");
+      setErro("Allow the microphone in your device settings.");
       return;
     }
-    ExpoSpeechRecognitionModule.start({ lang: "pt-BR", interimResults: false, continuous: true });
+    ExpoSpeechRecognitionModule.start({ lang: idioma, interimResults: false, continuous: true });
     setAtivo(true);
   }
 

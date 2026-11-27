@@ -33,7 +33,7 @@ export function Perfil() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setEmail(data.user?.email ?? "");
-      if (data.user?.created_at) setDesde(new Date(data.user.created_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric" }));
+      if (data.user?.created_at) setDesde(new Date(data.user.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" }));
     });
   }, []);
   useEffect(() => { if (perfil) setNome(perfil.nome ?? ""); }, [perfil]);
@@ -42,7 +42,7 @@ export function Perfil() {
     setErro(null);
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) { setErro("Permita o acesso às fotos para escolher uma imagem."); return; }
+      if (!perm.granted) { setErro("Allow access to your photos to pick an image."); return; }
       const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: "images", allowsEditing: true, aspect: [1, 1], quality: 1 });
       if (r.canceled || !r.assets[0]) return;
       setOcupado(true);
@@ -64,36 +64,36 @@ export function Perfil() {
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: c.paper }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 110 }} keyboardShouldPersistTaps="handled">
         <Entra style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink }}>Perfil</Text>
-          <Toque onPress={() => nav.navigate("Hoje")}><Text style={{ color: c.muted }}>Fechar ✕</Text></Toque>
+          <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink }}>Profile</Text>
+          <Toque onPress={() => nav.navigate("Hoje")}><Text style={{ color: c.muted }}>Close ✕</Text></Toque>
         </Entra>
 
         <Entra delay={60} style={{ marginTop: 18, alignItems: "center", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 28, padding: 24 }}>
-          <Toque onPress={trocarFoto} accessibilityLabel="Trocar foto de perfil">
+          <Toque onPress={trocarFoto} accessibilityLabel="Change profile photo">
             <Pop><Avatar tamanho={112} /></Pop>
             <View style={{ position: "absolute", right: 0, bottom: 0, backgroundColor: c.accent, borderRadius: 16, padding: 7 }}>
               <Icon nome="editar" cor={c.onAccent} tamanho={16} />
             </View>
           </Toque>
-          <Text style={{ color: c.muted, marginTop: 10 }}>{ocupado ? "Salvando…" : "Toque na foto para trocar"}</Text>
-          {perfil?.avatar ? <Toque onPress={() => salvar({ avatar: null }).catch((e) => setErro((e as Error).message))} style={{ padding: 6 }}><Text style={{ color: c.muted, fontSize: 12 }}>Remover foto</Text></Toque> : null}
+          <Text style={{ color: c.muted, marginTop: 10 }}>{ocupado ? "Saving…" : "Tap the photo to change it"}</Text>
+          {perfil?.avatar ? <Toque onPress={() => salvar({ avatar: null }).catch((e) => setErro((e as Error).message))} style={{ padding: 6 }}><Text style={{ color: c.muted, fontSize: 12 }}>Remove photo</Text></Toque> : null}
 
           <View style={{ alignSelf: "stretch", flexDirection: "row", gap: 10, marginTop: 18 }}>
-            {([["Notas", notas ? notas.length : "–"], ["Capítulos lidos", lidos ? lidos.size : "–"]] as const).map(([r, v]) => (
+            {([["Notas", notas ? notas.length : "–"], ["Chapters read", lidos ? lidos.size : "–"]] as const).map(([r, v]) => (
               <View key={r} style={{ flex: 1, backgroundColor: c.paper, borderColor: c.line, borderWidth: 1, borderRadius: 16, padding: 12 }}>
                 <Text style={{ fontFamily: serif, fontSize: 24, color: c.accent }}>{v}</Text>
                 <Text style={{ color: c.muted, fontSize: 12 }}>{r}</Text>
               </View>
             ))}
           </View>
-          {desde ? <Text style={{ color: c.muted, fontSize: 12, marginTop: 10 }}>Membro desde {desde}</Text> : null}
+          {desde ? <Text style={{ color: c.muted, fontSize: 12, marginTop: 10 }}>Member since {desde}</Text> : null}
 
           <View style={{ alignSelf: "stretch", marginTop: 18, gap: 8 }}>
-            <Text style={{ color: c.muted }}>Como devo te chamar?</Text>
-            <Campo value={nome} onChangeText={setNome} placeholder="Seu nome" maxLength={60} />
+            <Text style={{ color: c.muted }}>What should I call you?</Text>
+            <Campo value={nome} onChangeText={setNome} placeholder="Your name" maxLength={60} />
             <Text style={{ color: c.muted, fontSize: 12 }}>{email}</Text>
           </View>
-          <Botao titulo={ok ? "Salvo ✓" : "Salvar"} onPress={guardarNome} carregando={ocupado} estilo={{ marginTop: 16, alignSelf: "stretch" }} />
+          <Botao titulo={ok ? "Saved ✓" : "Save"} onPress={guardarNome} carregando={ocupado} estilo={{ marginTop: 16, alignSelf: "stretch" }} />
         </Entra>
 
         {erro ? <Entra style={{ marginTop: 14, backgroundColor: c.accentSoft, padding: 12, borderRadius: 12 }}><Text style={{ color: c.ink }}>{erro}</Text></Entra> : null}
@@ -101,7 +101,7 @@ export function Perfil() {
         <Entra delay={120}>
           <Toque onPress={async () => { await sincronizar().catch(() => undefined); await supabase.auth.signOut(); }} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 24 }}>
             <Icon nome="sair" cor={c.muted} />
-            <Text style={{ color: c.muted }}>Sair da conta</Text>
+            <Text style={{ color: c.muted }}>Sign out</Text>
           </Toque>
         </Entra>
       </ScrollView>

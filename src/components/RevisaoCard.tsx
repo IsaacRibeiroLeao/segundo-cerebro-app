@@ -44,21 +44,21 @@ export function RevisaoCard() {
   return (
     <Entra delay={140} style={{ marginTop: 22, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 18, padding: 16 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-        <Text style={{ fontFamily: serif, fontSize: 20, color: c.ink }}>Revisão da semana</Text>
+        <Text style={{ fontFamily: serif, fontSize: 20, color: c.ink }}>Weekly review</Text>
         {revisao && !gerando ? (
-          <Toque onPress={gerar}><Text style={{ color: c.muted, fontSize: 13 }}>Gerar de novo</Text></Toque>
+          <Toque onPress={gerar}><Text style={{ color: c.muted, fontSize: 13 }}>Generate again</Text></Toque>
         ) : null}
       </View>
       {gerando ? (
-        <View style={{ marginTop: 12 }}><Pensando texto="Relendo a sua semana" /></View>
+        <View style={{ marginTop: 12 }}><Pensando texto="Rereading your week" /></View>
       ) : recente && revisao ? (
         <View style={{ marginTop: 10 }}>
           {fontes.length ? <TextoComCitacoes texto={revisao.texto} fontes={fontes} /> : <Text style={{ color: c.ink, fontSize: 16, lineHeight: 24 }}>{limparCitacoes(revisao.texto)}</Text>}
         </View>
       ) : (
         <View style={{ marginTop: 10 }}>
-          <Text style={{ color: c.muted, fontSize: 14, lineHeight: 20 }}>Um resumo do que o Senhor tem falado com você nos últimos 7 dias, com temas, passagens e uma pergunta para a próxima semana.</Text>
-          <Botao titulo="Gerar revisão" onPress={gerar} estilo={{ marginTop: 12, alignSelf: "flex-start" }} />
+          <Text style={{ color: c.muted, fontSize: 14, lineHeight: 20 }}>A summary of what the Lord has been saying to you over the last 7 days, with themes, passages and a question for next week.</Text>
+          <Botao titulo="Generate review" onPress={gerar} estilo={{ marginTop: 12, alignSelf: "flex-start" }} />
         </View>
       )}
       {erro ? <Text style={{ marginTop: 10, color: c.ink, backgroundColor: c.accentSoft, padding: 10, borderRadius: 10 }}>{erro}</Text> : null}

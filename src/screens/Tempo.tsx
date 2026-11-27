@@ -16,7 +16,7 @@ import { TextoComCitacoes } from "../components/Citacoes";
 import { limparCitacoes } from "../lib/texto";
 
 type Filtro = { tipo: "tag" | "livro"; valor: string | number } | null;
-const mesAno = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+const mesAno = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
 export function Tempo() {
   const c = useCores();
@@ -81,7 +81,7 @@ export function Tempo() {
     if (v) {
       const ok = await ligarLembrete();
       setLembrete(ok);
-      if (!ok) setErro("Para receber o lembrete, permita as notificações do app nas configurações do aparelho.");
+      if (!ok) setErro("To get the reminder, allow the app's notifications in your device settings.");
     } else {
       await desligarLembrete();
       setLembrete(false);
@@ -93,13 +93,13 @@ export function Tempo() {
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: c.paper }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 110 }}>
-        <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink }}>Linha do tempo</Text>
-        <Text style={{ color: c.muted, marginTop: 2 }}>Veja como cada tema foi crescendo ao longo dos meses.</Text>
+        <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink }}>Timeline</Text>
+        <Text style={{ color: c.muted, marginTop: 2 }}>See how each theme has grown over the months.</Text>
 
         <View style={{ flexDirection: "row", alignSelf: "flex-start", marginTop: 16, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 12, padding: 4 }}>
           {(["notas", "revisoes"] as const).map((a) => (
             <Toque key={a} onPress={() => setAba(a)} style={{ paddingHorizontal: 16, paddingVertical: 6, borderRadius: 9, backgroundColor: aba === a ? c.accent : "transparent" }}>
-              <Text style={{ color: aba === a ? c.onAccent : c.muted }}>{a === "notas" ? "Notas" : "Revisões"}</Text>
+              <Text style={{ color: aba === a ? c.onAccent : c.muted }}>{a === "notas" ? "Notas" : "Reviews"}</Text>
             </Toque>
           ))}
         </View>
@@ -109,26 +109,26 @@ export function Tempo() {
         {aba === "notas" ? (
           <>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 14 }} contentContainerStyle={{ gap: 8 }}>
-              <Toque onPress={() => escolher(null)} style={chip(!filtro)}><Text style={{ color: !filtro ? c.onAccent : c.muted }}>Tudo</Text></Toque>
+              <Toque onPress={() => escolher(null)} style={chip(!filtro)}><Text style={{ color: !filtro ? c.onAccent : c.muted }}>All</Text></Toque>
               {tags.map((t) => { const a = filtro?.tipo === "tag" && filtro.valor === t; return <Toque key={t} onPress={() => escolher({ tipo: "tag", valor: t })} style={chip(a)}><Text style={{ color: a ? c.onAccent : c.muted }}>#{t}</Text></Toque>; })}
               {livros.map((l) => { const a = filtro?.tipo === "livro" && filtro.valor === l; return <Toque key={l} onPress={() => escolher({ tipo: "livro", valor: l })} style={chip(a)}><Text style={{ color: a ? c.onAccent : c.muted }}>{NOMES_LIVROS[l]}</Text></Toque>; })}
             </ScrollView>
 
             {filtro && lista.length >= 2 && (
               <Entra style={{ marginTop: 14, backgroundColor: c.accentSoft, borderColor: c.accent, borderWidth: 1, borderRadius: 16, padding: 14 }}>
-                {pensando ? <Pensando texto="Lendo o caminho deste tema" /> : evo ? (
+                {pensando ? <Pensando texto="Tracing this theme's path" /> : evo ? (
                   <>
-                    <Text style={{ color: c.accent, fontSize: 12, fontWeight: "700", letterSpacing: 0.8, marginBottom: 8 }}>COMO {evo.tema.toUpperCase()} EVOLUIU</Text>
+                    <Text style={{ color: c.accent, fontSize: 12, fontWeight: "700", letterSpacing: 0.8, marginBottom: 8 }}>HOW {evo.tema.toUpperCase()} EVOLVED</Text>
                     <TextoComCitacoes texto={evo.texto} fontes={evo.fontes} />
                   </>
                 ) : (
-                  <Toque onPress={contarEvolucao}><Text style={{ color: c.accent, fontWeight: "600" }}>Como esse tema evoluiu? →</Text></Toque>
+                  <Toque onPress={contarEvolucao}><Text style={{ color: c.accent, fontWeight: "600" }}>How has this theme evolved? →</Text></Toque>
                 )}
               </Entra>
             )}
 
-            {!notas && <View style={{ marginTop: 24 }}><Pensando texto="Carregando" /></View>}
-            {notas && lista.length === 0 && <Vazio texto="Nenhuma nota nesse recorte." />}
+            {!notas && <View style={{ marginTop: 24 }}><Pensando texto="Loading" /></View>}
+            {notas && lista.length === 0 && <Vazio texto="No notes in this selection." />}
 
             <View style={{ marginTop: 22, marginLeft: 8, borderLeftWidth: 1, borderLeftColor: c.line, paddingLeft: 20 }}>
               {grupos.map(([mes, itens], gi) => (
@@ -157,14 +157,14 @@ export function Tempo() {
           <View style={{ marginTop: 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 14, padding: 12 }}>
               <View style={{ flex: 1, paddingRight: 12 }}>
-                <Text style={{ color: c.ink, fontWeight: "600" }}>Lembrete semanal</Text>
-                <Text style={{ color: c.muted, fontSize: 13 }}>Domingo às 18h, para fazer a revisão.</Text>
+                <Text style={{ color: c.ink, fontWeight: "600" }}>Weekly reminder</Text>
+                <Text style={{ color: c.muted, fontSize: 13 }}>Sunday at 6 pm, to do the review.</Text>
               </View>
-              <Switch value={lembrete} onValueChange={alternarLembrete} trackColor={{ true: c.accent, false: c.line }} thumbColor={c.card} accessibilityLabel="Lembrete semanal de revisão" />
+              <Switch value={lembrete} onValueChange={alternarLembrete} trackColor={{ true: c.accent, false: c.line }} thumbColor={c.card} accessibilityLabel="Weekly review reminder" />
             </View>
-            <Botao titulo="Gerar revisão dos últimos 7 dias" onPress={novaRevisao} carregando={gerando} estilo={{ marginTop: 14 }} />
-            {gerando && <View style={{ marginTop: 12 }}><Pensando texto="Relendo a sua semana" /></View>}
-            {revisoes && revisoes.length === 0 && !gerando && <Vazio texto="Nenhuma revisão ainda." />}
+            <Botao titulo="Generate review of the last 7 days" onPress={novaRevisao} carregando={gerando} estilo={{ marginTop: 14 }} />
+            {gerando && <View style={{ marginTop: 12 }}><Pensando texto="Rereading your week" /></View>}
+            {revisoes && revisoes.length === 0 && !gerando && <Vazio texto="No reviews yet." />}
             {(revisoes ?? []).map((r, i) => (
               <Entra key={r.id} delay={i * 50} style={{ marginTop: 12, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 16, padding: 16 }}>
                 <Text style={{ color: c.muted, fontSize: 12 }}>{formatarData(r.inicio)} a {formatarData(r.fim)}</Text>

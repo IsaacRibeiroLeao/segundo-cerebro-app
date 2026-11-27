@@ -45,7 +45,7 @@ export function usePerfil() {
 
   const salvar = useCallback(async (novo: Partial<Perfil>) => {
     const { data: u } = await supabase.auth.getUser();
-    if (!u.user) throw new Error("Sessão expirada. Entre de novo.");
+    if (!u.user) throw new Error("Session expired. Please sign in again.");
     const prox = { nome: estado?.nome ?? null, avatar: estado?.avatar ?? null, ...novo };
     const { error } = await supabase.from("sc_perfil").upsert({ user_id: u.user.id, ...prox, atualizado_em: new Date().toISOString() });
     if (error) throw new Error(error.message);

@@ -12,11 +12,11 @@ export async function lembreteAtivo() {
   return (await AsyncStorage.getItem(CHAVE)) === "1";
 }
 
-// Lembrete semanal: domingo às 18h para fazer a revisão.
+// Weekly reminder: domingo às 18h para fazer a revisão.
 export async function ligarLembrete(): Promise<boolean> {
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("revisao", {
-      name: "Revisão semanal",
+      name: "Weekly review",
       importance: Notifications.AndroidImportance.DEFAULT,
     });
   }
@@ -25,7 +25,7 @@ export async function ligarLembrete(): Promise<boolean> {
   if (!perm.granted) return false;
   await Notifications.cancelAllScheduledNotificationsAsync();
   await Notifications.scheduleNotificationAsync({
-    content: { title: "Revisão da semana", body: "Quer ver o que o Senhor tem falado com você nesta semana?" },
+    content: { title: "Weekly review", body: "Want to see what the Lord has been saying to you this week?" },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: 1, hour: 18, minute: 0, channelId: "revisao" },
   });
   await AsyncStorage.setItem(CHAVE, "1");

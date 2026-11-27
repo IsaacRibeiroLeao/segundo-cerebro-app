@@ -25,7 +25,7 @@ import { limparDadosLocais } from "./src/lib/sessao";
 
 const Tab = createBottomTabNavigator<Abas>();
 
-// Notas e Linha do tempo são duas visões da mesma coisa: um seletor no topo alterna entre elas.
+// Notas e Timeline são duas visões da mesma coisa: um seletor no topo alterna entre elas.
 function NotasETempo() {
   const c = useCores();
   const [modo, setModo] = useState<"lista" | "tempo">("lista");
@@ -34,7 +34,7 @@ function NotasETempo() {
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: c.paper }}>
       <View style={{ alignSelf: "flex-start", marginLeft: 20, marginTop: 10, flexDirection: "row", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 14, padding: 3 }}>
-        {([["lista", "Lista"], ["tempo", "Linha do tempo"]] as const).map(([k, nome]) => (
+        {([["lista", "Lista"], ["tempo", "Timeline"]] as const).map(([k, nome]) => (
           <Toque key={k} onPress={() => setModo(k)} style={{ borderRadius: 11, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: modo === k ? c.accent : "transparent" }}>
             <Text style={{ fontSize: 12, fontWeight: modo === k ? "700" : "500", color: modo === k ? c.onAccent : c.muted }}>{nome}</Text>
           </Toque>
@@ -50,13 +50,13 @@ function BotaoBiblia({ onPress, focado }: { onPress?: () => void; focado: boolea
   const c = useCores();
   return (
     <View style={{ flex: 1, alignItems: "center" }}>
-      <Toque onPress={onPress} accessibilityLabel="Bíblia" style={{
+      <Toque onPress={onPress} accessibilityLabel="Bible" style={{
         marginTop: -26, width: 66, height: 66, borderRadius: 33, backgroundColor: "#ffffff", alignItems: "center", justifyContent: "center",
         borderWidth: 3, borderColor: focado ? c.accent : c.paper, elevation: 12, shadowColor: "#000", shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 5 },
       }}>
         <Icon nome="biblia" cor={c.accent} tamanho={32} />
       </Toque>
-      <Text style={{ fontSize: 11, fontWeight: "600", marginTop: 3, color: focado ? c.accent : c.muted }}>Bíblia</Text>
+      <Text style={{ fontSize: 11, fontWeight: "600", marginTop: 3, color: focado ? c.accent : c.muted }}>Bible</Text>
     </View>
   );
 }
@@ -105,12 +105,12 @@ function Navegacao() {
         <Tab.Screen
           name="Hoje"
           component={Hoje}
-          options={{ tabBarIcon: ({ color, focused }) => <IconeAba nome="hoje" cor={color} focado={focused} /> }}
+          options={{ tabBarLabel: "Today", tabBarIcon: ({ color, focused }) => <IconeAba nome="hoje" cor={color} focado={focused} /> }}
         />
         <Tab.Screen
           name="Notas"
           component={NotasETempo}
-          options={{ tabBarIcon: ({ color, focused }) => <IconeAba nome="notas" cor={color} focado={focused} /> }}
+          options={{ tabBarLabel: "Notes", tabBarIcon: ({ color, focused }) => <IconeAba nome="notas" cor={color} focado={focused} /> }}
         />
         <Tab.Screen
           name="Biblia"
@@ -122,12 +122,12 @@ function Navegacao() {
         <Tab.Screen
           name="Conversar"
           component={Conversar}
-          options={{ tabBarIcon: ({ color, focused }) => <IconeAba nome="conversar" cor={color} focado={focused} /> }}
+          options={{ tabBarLabel: "Chat", tabBarIcon: ({ color, focused }) => <IconeAba nome="conversar" cor={color} focado={focused} /> }}
         />
         <Tab.Screen
           name="Mapa"
           component={Mapa}
-          options={{ tabBarIcon: ({ color, focused }) => <IconeAba nome="mapa" cor={color} focado={focused} /> }}
+          options={{ tabBarLabel: "Map", tabBarIcon: ({ color, focused }) => <IconeAba nome="mapa" cor={color} focado={focused} /> }}
         />
         <Tab.Screen
           name="Perfil"
@@ -142,12 +142,12 @@ function Navegacao() {
 export default function App() {
   const c = useCores();
   const [session, setSession] = useState<Session | null>(null);
-  const [carregando, setCarregando] = useState(true);
+  const [carregando, setLoading] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      setCarregando(false);
+      setLoading(false);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((e, s) => {
       if (e === "SIGNED_OUT") limparDadosLocais();

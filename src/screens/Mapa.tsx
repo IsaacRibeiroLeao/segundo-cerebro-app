@@ -21,7 +21,7 @@ const AnimCircle = Animated.createAnimatedComponent(Circle);
 type No = { nota: Nota; x: number; y: number; r: number; cor: string; grau: number; etiqueta: string };
 type Aresta = { chave: string; a: string; b: string; conexoes: Conexao[]; peso: number; grupo: GrupoConexao };
 const PRIORIDADE: GrupoConexao[] = ["passagem", "sentido", "tema"];
-const PERIODOS = [{ id: "30", nome: "30 dias", dias: 30 }, { id: "90", nome: "90 dias", dias: 90 }, { id: "365", nome: "1 ano", dias: 365 }, { id: "tudo", nome: "Tudo", dias: 0 }];
+const PERIODOS = [{ id: "30", nome: "30 days", dias: 30 }, { id: "90", nome: "90 days", dias: 90 }, { id: "365", nome: "1 year", dias: 365 }, { id: "tudo", nome: "Tudo", dias: 0 }];
 
 function etiqueta(n: Nota) {
   const p = passagemPrincipal(n);
@@ -127,8 +127,8 @@ export function Mapa() {
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: c.paper }}>
       <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 110 }}>
         <View style={{ paddingHorizontal: 8 }}>
-          <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink }}>Mapa</Text>
-          <Text style={{ color: c.muted, marginTop: 2 }}>Toque numa ligação para ver por que as duas notas se conectam.</Text>
+          <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink }}>Map</Text>
+          <Text style={{ color: c.muted, marginTop: 2 }}>Tap a link to see why the two notes connect.</Text>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 8 }}>
@@ -136,7 +136,7 @@ export function Mapa() {
         </ScrollView>
         {todasTags.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 8 }}>
-            <Toque onPress={() => setTag(null)} style={chip(!tag)}><Text style={{ color: !tag ? c.onAccent : c.muted }}>Todas as tags</Text></Toque>
+            <Toque onPress={() => setTag(null)} style={chip(!tag)}><Text style={{ color: !tag ? c.onAccent : c.muted }}>All tags</Text></Toque>
             {todasTags.map((t) => <Toque key={t} onPress={() => setTag(tag === t ? null : t)} style={chip(tag === t)}><Text style={{ color: tag === t ? c.onAccent : c.muted }}>#{t}</Text></Toque>)}
           </ScrollView>
         )}
@@ -148,15 +148,15 @@ export function Mapa() {
               <Text style={{ color: c.ink }}>{NOME_GRUPO[g]}</Text>
             </Toque>
           ))}
-          <Toque onPress={() => setSoConectadas((v) => !v)} style={chip(soConectadas)}><Text style={{ color: soConectadas ? c.onAccent : c.muted }}>Só conectadas</Text></Toque>
+          <Toque onPress={() => setSoConectadas((v) => !v)} style={chip(soConectadas)}><Text style={{ color: soConectadas ? c.onAccent : c.muted }}>Connected only</Text></Toque>
         </ScrollView>
 
-        {!notas && <View style={{ marginTop: 24, paddingHorizontal: 8 }}><Pensando texto="Montando o mapa" /></View>}
+        {!notas && <View style={{ marginTop: 24, paddingHorizontal: 8 }}><Pensando texto="Building the map" /></View>}
 
         {notas && (
           <Entra style={{ marginTop: 12, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 18, overflow: "hidden" }}>
             {nos.length === 0 ? (
-              <View style={{ padding: 24 }}><Vazio texto={notas.length === 0 ? "O mapa aparece quando você escrever suas primeiras notas." : "Nada neste recorte."} /></View>
+              <View style={{ padding: 24 }}><Vazio texto={notas.length === 0 ? "The map appears once you write your first notes." : "Nothing in this selection."} /></View>
             ) : (
               <View>
                 <Svg width={largura} height={alturaSvg} viewBox={viewBox}>
@@ -199,8 +199,8 @@ export function Mapa() {
                   </G>
                 </Svg>
                 <View style={{ position: "absolute", right: 10, top: 10, borderWidth: 1, borderColor: c.line, backgroundColor: c.card, borderRadius: 12, overflow: "hidden" }}>
-                  <Toque onPress={() => setZoom((z) => Math.min(2.2, z + 0.25))} accessibilityLabel="Aproximar" style={{ paddingHorizontal: 12, paddingVertical: 4 }}><Text style={{ color: c.ink, fontSize: 20 }}>+</Text></Toque>
-                  <Toque onPress={() => setZoom((z) => Math.max(0.8, z - 0.25))} accessibilityLabel="Afastar" style={{ paddingHorizontal: 12, paddingVertical: 4, borderTopWidth: 1, borderTopColor: c.line }}><Text style={{ color: c.ink, fontSize: 20 }}>−</Text></Toque>
+                  <Toque onPress={() => setZoom((z) => Math.min(2.2, z + 0.25))} accessibilityLabel="Zoom in" style={{ paddingHorizontal: 12, paddingVertical: 4 }}><Text style={{ color: c.ink, fontSize: 20 }}>+</Text></Toque>
+                  <Toque onPress={() => setZoom((z) => Math.max(0.8, z - 0.25))} accessibilityLabel="Zoom out" style={{ paddingHorizontal: 12, paddingVertical: 4, borderTopWidth: 1, borderTopColor: c.line }}><Text style={{ color: c.ink, fontSize: 20 }}>−</Text></Toque>
                 </View>
               </View>
             )}
@@ -209,7 +209,7 @@ export function Mapa() {
 
         {(noSel || arestaSel) && (
           <Entra key={sel?.id} style={{ marginTop: 12, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 18, padding: 16, gap: 14 }}>
-            <Toque onPress={() => setSel(null)} style={{ alignSelf: "flex-end" }}><Text style={{ color: c.muted }}>Fechar ✕</Text></Toque>
+            <Toque onPress={() => setSel(null)} style={{ alignSelf: "flex-end" }}><Text style={{ color: c.muted }}>Close ✕</Text></Toque>
             {noSel && (
               <>
                 <Text style={{ color: c.muted, fontSize: 12 }}>{formatarData(noSel.nota.created_at)}</Text>
@@ -219,8 +219,8 @@ export function Mapa() {
                 </View>
                 {noSel.nota.tags.length > 0 && <Text style={{ color: c.muted, fontSize: 12 }}>{noSel.nota.tags.map((t) => `#${t}`).join("  ")}</Text>}
                 <View style={{ gap: 8 }}>
-                  <Text style={{ color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 0.8 }}>POR QUE ESTÁ LIGADA</Text>
-                  {conexoesDoNo(noSel.nota.id).length === 0 && <Text style={{ color: c.muted }}>Nenhuma conexão neste recorte.</Text>}
+                  <Text style={{ color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 0.8 }}>WHY IT'S LINKED</Text>
+                  {conexoesDoNo(noSel.nota.id).length === 0 && <Text style={{ color: c.muted }}>No connections in this selection.</Text>}
                   {conexoesDoNo(noSel.nota.id).map(({ aresta, outro }) => {
                     const o = porId.get(outro);
                     return (
@@ -235,12 +235,12 @@ export function Mapa() {
                     );
                   })}
                 </View>
-                <Toque onPress={() => nav.navigate("Notas", { notaId: noSel.nota.id })}><Text style={{ color: c.accent, fontWeight: "600" }}>Abrir nota →</Text></Toque>
+                <Toque onPress={() => nav.navigate("Notas", { notaId: noSel.nota.id })}><Text style={{ color: c.accent, fontWeight: "600" }}>Open note →</Text></Toque>
               </>
             )}
             {arestaSel && (
               <>
-                <Text style={{ color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 0.8 }}>POR QUE ESTAS NOTAS SE LIGAM</Text>
+                <Text style={{ color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 0.8 }}>WHY THESE NOTES LINK</Text>
                 {arestaSel.conexoes.map((x) => (
                   <View key={x.id} style={{ backgroundColor: c.accentSoft, borderRadius: 12, padding: 12 }}>
                     <Text style={{ color: corGrupo(GRUPO[x.tipo]), fontSize: 11, fontWeight: "700", letterSpacing: 0.6 }}>{NOME_GRUPO[GRUPO[x.tipo]].toUpperCase()}</Text>
@@ -264,10 +264,10 @@ export function Mapa() {
 
         {nos.length > 0 && (
           <Entra delay={200} style={{ marginTop: 12, borderWidth: 1, borderColor: c.line, backgroundColor: c.card, borderRadius: 16, padding: 14, gap: 4 }}>
-            <Text style={{ color: c.ink, fontWeight: "600" }}>Como ler o mapa</Text>
-            <Text style={{ color: c.muted, fontSize: 12 }}>❖ nota com passagem sua · ✦ passagem sugerida (anel tracejado)</Text>
-            <Text style={{ color: c.muted, fontSize: 12 }}>Tamanho = quantas ligações · Cor = tema principal (primeira tag ou livro)</Text>
-            <Text style={{ color: c.muted, fontSize: 12 }}>Linha contínua = sentido · tracejada = passagem · pontilhada = tema</Text>
+            <Text style={{ color: c.ink, fontWeight: "600" }}>How to read the map</Text>
+            <Text style={{ color: c.muted, fontSize: 12 }}>❖ note with your passage · ✦ suggested passage (dashed ring)</Text>
+            <Text style={{ color: c.muted, fontSize: 12 }}>Size = number of links · Color = main theme (first tag or book)</Text>
+            <Text style={{ color: c.muted, fontSize: 12 }}>Solid line = meaning · dashed = passage · dotted = theme</Text>
             {temas.length > 0 && (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 6 }}>
                 {temas.map(([t, cor]) => (

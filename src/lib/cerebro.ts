@@ -37,6 +37,8 @@ export const buscar = (consulta: string) =>
 export const prosear = (mensagem: string, historico: { role: string; content: string }[]) =>
   chamar<{ resposta: string; percepcao: { texto: string; passagem: string } | null; fontes: Fonte[] }>({ acao: "prosear", mensagem, historico });
 
+export const transcrever = (audio: string, mime: string) => chamar<{ texto: string }>({ acao: "transcrever", audio, mime });
+
 export const conversar = (mensagem: string, historico: { role: string; content: string }[]) =>
   chamar<{ resposta: string; fontes: Fonte[] }>({ acao: "conversar", mensagem, historico });
 
@@ -79,5 +81,5 @@ export function parseLista(texto: string, removerHash = false): string[] {
 }
 
 export function formatarData(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
 }

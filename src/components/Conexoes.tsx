@@ -10,7 +10,7 @@ export function useCorGrupo() {
   return (g: GrupoConexao) => (g === "sentido" ? c.accent : g === "passagem" ? c.sage : c.muted);
 }
 
-// "Por que está ligada": cada conexão com o motivo.
+// "Why it's linked": cada conexão com o motivo.
 export function ListaConexoes({ notaId, conexoes, notas, aoAbrir }: { notaId: string; conexoes: Conexao[]; notas: Nota[]; aoAbrir: (id: string) => void }) {
   const c = useCores();
   const cor = useCorGrupo();
@@ -18,7 +18,7 @@ export function ListaConexoes({ notaId, conexoes, notas, aoAbrir }: { notaId: st
     .filter((x) => x.a === notaId || x.b === notaId)
     .map((x) => ({ ...x, outro: x.a === notaId ? x.b : x.a }))
     .sort((x, y) => y.peso - x.peso);
-  if (!lista.length) return <Text style={{ color: c.muted, fontSize: 14 }}>Ainda sem conexões com outras notas.</Text>;
+  if (!lista.length) return <Text style={{ color: c.muted, fontSize: 14 }}>No connections to other notes yet.</Text>;
   const porId = new Map(notas.map((n) => [n.id, n]));
   return (
     <View style={{ gap: 8 }}>

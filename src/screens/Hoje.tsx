@@ -27,7 +27,7 @@ import { NOMES_LIVROS, TOTAL_CAPITULOS, proximoNaoLido } from "../lib/livros";
 
 function saudacao() {
   const h = new Date().getHours();
-  return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
 }
 
 const RASCUNHO = "sc_rascunho_v1";
@@ -113,7 +113,7 @@ export function Hoje() {
       setPendenteId(null);
     } catch (e) {
       setPendenteId(notaId);
-      setErro(`Nota guardada, mas a análise falhou: ${(e as Error).message}`);
+      setErro(`Note saved, but the analysis failed: ${(e as Error).message}`);
     }
     await recarregar();
     setConectando(false);
@@ -132,9 +132,9 @@ export function Hoje() {
       if (semRede) {
         await guardarNaFila(nova);
         setConteudo(""); setRefs(""); setTags("");
-        setAviso("Sem internet agora. A nota está guardada no aparelho e será enviada e conectada quando a conexão voltar.");
+        setAviso("No internet right now. The note is saved on your device and will be sent and connected when the connection returns.");
       } else {
-        setErro(error?.message ?? "Não foi possível salvar.");
+        setErro(error?.message ?? "Couldn't save.");
       }
       setFase("livre");
       return;
@@ -159,12 +159,12 @@ export function Hoje() {
           <Entra style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={{ color: c.muted, fontSize: 13 }}>
-                {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
+                {new Date().toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" })}
               </Text>
               <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink, marginTop: 2 }}>{saudacao()}{nomeUsuario ? `, ${nomeUsuario}` : ""}.</Text>
-              <Text style={{ color: c.muted, marginTop: 4 }}>O que você leu ou sentiu hoje?</Text>
+              <Text style={{ color: c.muted, marginTop: 4 }}>What did you read or feel today?</Text>
             </View>
-            <Toque onPress={() => nav.navigate("Perfil")} accessibilityLabel="Abrir perfil" style={{ shadowColor: "#3c2814", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4, borderRadius: 24 }}>
+            <Toque onPress={() => nav.navigate("Perfil")} accessibilityLabel="Open profile" style={{ shadowColor: "#3c2814", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4, borderRadius: 24 }}>
               <Avatar tamanho={48} />
             </Toque>
           </Entra>
@@ -172,8 +172,8 @@ export function Hoje() {
           {(offline || pendentes > 0) && (
             <Entra style={{ marginTop: 12, backgroundColor: c.accentSoft, borderRadius: 12, padding: 10 }}>
               <Text style={{ color: c.ink, fontSize: 13 }}>
-                {offline ? "Você está sem internet. " : ""}
-                {pendentes > 0 ? `${pendentes} ${pendentes === 1 ? "nota aguarda" : "notas aguardam"} envio.` : "Você ainda pode escrever: suas notas ficam guardadas aqui."}
+                {offline ? "You're offline. " : ""}
+                {pendentes > 0 ? `${pendentes} ${pendentes === 1 ? "nota aguarda" : "notas aguardam"} envio.` : "You can still write: your notes are kept here."}
               </Text>
             </Entra>
           )}
@@ -182,9 +182,9 @@ export function Hoje() {
             <Entra delay={60} style={{ marginTop: 16, backgroundColor: c.accentSoft, borderColor: c.accent, borderWidth: 1, borderRadius: 18, padding: 14 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: serif, fontSize: 18, color: c.ink }}>Sua jornada continua</Text>
+                  <Text style={{ fontFamily: serif, fontSize: 18, color: c.ink }}>Your journey continues</Text>
                   <Text style={{ color: c.muted, fontSize: 13, marginTop: 2 }}>
-                    {lidos.size} de {TOTAL_CAPITULOS} capítulos · {semana} {semana === 1 ? "nota" : "notas"} na semana · {sequencia} {sequencia === 1 ? "dia" : "dias"} seguidos
+                    {lidos.size} of {TOTAL_CAPITULOS} chapters · {semana} {semana === 1 ? "note" : "notes"} this week · {sequencia}-day streak
                   </Text>
                 </View>
                 <Tile nome="biblia" tamanho={42} ativo />
@@ -194,7 +194,7 @@ export function Hoje() {
               </View>
               {proximo ? (
                 <Toque onPress={() => nav.navigate("Biblia")} style={{ marginTop: 10 }}>
-                  <Text style={{ color: c.accent, fontWeight: "600" }}>Continuar em {NOMES_LIVROS[proximo.livro]} {proximo.capitulo} →</Text>
+                  <Text style={{ color: c.accent, fontWeight: "600" }}>Continue in {NOMES_LIVROS[proximo.livro]} {proximo.capitulo} →</Text>
                 </Toque>
               ) : null}
             </Entra>
@@ -206,7 +206,7 @@ export function Hoje() {
                 multiline
                 value={conteudo}
                 onChangeText={setConteudo}
-                accessibilityLabel="Sua anotação" placeholder="Escreva o que o Espírito Santo falou ao seu coração…"
+                accessibilityLabel="Your note" placeholder="Write what the Holy Spirit spoke to your heart…"
                 estilo={{ borderWidth: 0, backgroundColor: "transparent", paddingHorizontal: 0, alignItems: "flex-start" }}
                 style={{ minHeight: 120, textAlignVertical: "top", fontFamily: serif, fontSize: 17, lineHeight: 25, paddingRight: 44 }}
               />
@@ -215,7 +215,7 @@ export function Hoje() {
                 <Toque
                   onPress={ditado.alternar}
                   accessibilityRole="button"
-                  accessibilityLabel={ditado.ativo ? "Parar de ouvir" : "Ditar por voz"}
+                  accessibilityLabel={ditado.ativo ? "Stop listening" : "Dictate by voice"}
                   style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: ditado.ativo ? c.accent : "transparent" }}
                 >
                   <Icon nome="microfone" cor={ditado.ativo ? c.onAccent : c.muted} tamanho={20} />
@@ -223,11 +223,11 @@ export function Hoje() {
               </View>
             </View>
             {ditado.erro ? <Text style={{ color: c.muted, fontSize: 12 }}>{ditado.erro}</Text> : null}
-            <Campo value={refs} onChangeText={setRefs} accessibilityLabel="Passagem bíblica" placeholder="Passagem (opcional): João 15:5, Sl 23" estilo={{ marginTop: 8 }} />
-            <Campo value={tags} onChangeText={setTags} accessibilityLabel="Tags" placeholder="Tags (opcional): fé, obediência" estilo={{ marginTop: 8 }} />
-            <Text style={{ color: c.muted, fontSize: 12, marginTop: 10 }}>Sem passagem? Eu sugiro uma para dar contexto.</Text>
+            <Campo value={refs} onChangeText={setRefs} accessibilityLabel="Bible passage" placeholder="Passage (optional): João 15:5, Sl 23" estilo={{ marginTop: 8 }} />
+            <Campo value={tags} onChangeText={setTags} accessibilityLabel="Tags" placeholder="Tags (optional): faith, obedience" estilo={{ marginTop: 8 }} />
+            <Text style={{ color: c.muted, fontSize: 12, marginTop: 10 }}>No passage? I'll suggest one for context.</Text>
             <Botao
-              titulo="Guardar e conectar"
+              titulo="Save and connect"
               onPress={salvar}
               carregando={fase === "guardando"}
               desabilitado={!conteudo.trim()}
@@ -235,15 +235,15 @@ export function Hoje() {
             />
           </Entra>
 
-          {conectando && <View style={{ marginTop: 16 }}><Pensando texto="Procurando ligações com o que você já escreveu" /></View>}
-          {analisando && !conectando && <View style={{ marginTop: 16 }}><Pensando texto="Atualizando suas notas" /></View>}
+          {conectando && <View style={{ marginTop: 16 }}><Pensando texto="Looking for links to what you've already written" /></View>}
+          {analisando && !conectando && <View style={{ marginTop: 16 }}><Pensando texto="Updating your notes" /></View>}
           {aviso && <Entra style={{ marginTop: 14, backgroundColor: c.accentSoft, padding: 12, borderRadius: 12 }}><Text style={{ color: c.ink }}>{aviso}</Text></Entra>}
           {erro && (
             <Entra style={{ marginTop: 14, backgroundColor: c.accentSoft, padding: 12, borderRadius: 12 }}>
               <Text style={{ color: c.ink }}>{erro}</Text>
               {pendenteId ? (
                 <Toque onPress={() => { setErro(null); conectar(pendenteId); }} style={{ marginTop: 8 }}>
-                  <Text style={{ color: c.accent, fontWeight: "700" }}>Tentar de novo</Text>
+                  <Text style={{ color: c.accent, fontWeight: "700" }}>Try again</Text>
                 </Toque>
               ) : null}
             </Entra>
@@ -251,10 +251,10 @@ export function Hoje() {
 
           {resultado && (
             <Entra style={{ marginTop: 18, backgroundColor: c.accentSoft, borderColor: c.accent, borderWidth: 1, borderRadius: 18, padding: 16, gap: 14 }}>
-              <Text style={{ color: c.accent, fontSize: 12, fontWeight: "700", letterSpacing: 0.8 }}>✓ NOTA GUARDADA E CONECTADA</Text>
+              <Text style={{ color: c.accent, fontSize: 12, fontWeight: "700", letterSpacing: 0.8 }}>✓ NOTE SAVED AND CONNECTED</Text>
               {resultado.passagem && (
                 <View style={{ gap: 6 }}>
-                  <Text style={{ color: c.muted, fontSize: 12 }}>Para dar contexto à sua nota:</Text>
+                  <Text style={{ color: c.muted, fontSize: 12 }}>To give your note context:</Text>
                   <Passagem rotulo={resultado.passagem.ref} sugerida motivo={resultado.passagem.motivo} />
                 </View>
               )}
@@ -264,7 +264,7 @@ export function Hoje() {
               </View>
               {notaResultado ? <TagsSugeridas nota={notaResultado} aoMudar={recarregar} /> : null}
               <Toque onPress={() => nav.navigate("Conversar")}>
-                <Text style={{ color: c.accent, fontWeight: "600" }}>Quero pensar mais sobre isso →</Text>
+                <Text style={{ color: c.accent, fontWeight: "600" }}>I want to think more about this →</Text>
               </Toque>
             </Entra>
           )}
@@ -272,11 +272,11 @@ export function Hoje() {
           <RevisaoCard />
 
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginTop: 32 }}>
-            <Text style={{ fontFamily: serif, fontSize: 21, color: c.ink }}>Últimas anotações</Text>
-            <Toque onPress={() => nav.navigate("Notas")}><Text style={{ color: c.muted }}>Ver todas</Text></Toque>
+            <Text style={{ fontFamily: serif, fontSize: 21, color: c.ink }}>Latest notes</Text>
+            <Toque onPress={() => nav.navigate("Notas")}><Text style={{ color: c.muted }}>See all</Text></Toque>
           </View>
           {notas && recentes.length === 0 ? (
-            <Vazio texto="Sua primeira anotação começa aqui." />
+            <Vazio texto="Your first note starts here." />
           ) : (
             recentes.map((n, i) => {
               const p = passagemPrincipal(n);

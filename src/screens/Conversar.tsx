@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FlatList, Image, KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { conversar, processarNota, prosear } from "../lib/cerebro";
+import { conversar, processarNota, prosear, transcrever } from "../lib/cerebro";
 import { supabase } from "../lib/supabase";
 import type { Mensagem, Percepcao } from "../lib/types";
 import { serif, useCores } from "../theme";
@@ -10,18 +10,20 @@ import { Botao, Campo } from "../components/ui";
 import { ListaFontes, TextoComCitacoes } from "../components/Citacoes";
 import { Digitando, Entra } from "../components/anim";
 import { Avatar } from "../components/Avatar";
+import { useDitado } from "../components/useDitado";
+import { useGravador } from "../components/useGravador";
 
 const SUGESTOES = [
-  "O que mais se repete nas minhas anotações?",
-  "Quais temas Deus tem tratado comigo ultimamente?",
-  "Como o que escrevi sobre fé se liga ao que escrevi sobre obediência?",
-  "Onde eu vejo tensão ou contradição nas minhas notas?",
+  "What repeats the most in my notes?",
+  "What themes has God been dealing with me about lately?",
+  "How does what I wrote about faith connect to what I wrote about obedience?",
+  "Where do I see tension or contradiction in my notes?",
 ];
 
 const CHAVE = "sc_chat_v1";
 const CHAVE_PROSA = "sc_prosa_v1";
 const CHAVE_MODO = "sc_chat_modo_v1";
-const ABERTURAS = ["Estou aqui. O que ficou no seu coração hoje?", "Sobre o que você está pensando ultimamente?", "Teve algo na leitura que não saiu da sua cabeça?"];
+const ABERTURAS = ["I'm here. What's been on your heart today?", "What have you been thinking about lately?", "Was there something in your reading that stayed with you?"];
 type Modo = "conversa" | "notas";
 
 export function Conversar() {
@@ -32,6 +34,20 @@ export function Conversar() {
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [idioma, setIdioma] = useState<"en-US" | "pt-BR">("en-US");
+  const [transcrevendo, setTranscrevendo] = useState(false);
+  const ditado = useDitado((t) => setTexto((x) => (x ? `${x} ${t}` : t)), idioma);
+  const gravador = useGravador(async (b64, mime) => {
+    setTranscrevendo(true);
+    setErro(null);
+    try {
+      const { texto: falado } = await transcrever(b64, mime);
+      await enviar(falado, true);
+    } catch (e) {
+      setErro((e as Error).message);
+    }
+    setTranscrevendo(false);
+  });
   const [pronto, setPronto] = useState(false);
 
   useEffect(() => {
@@ -65,22 +81,23 @@ export function Conversar() {
     if (guardar) {
       const { data, error } = await supabase
         .from("sc_notas")
-        .insert({ conteudo: `Percepção numa conversa: ${p.texto}`, referencias: p.passagem ? [p.passagem] : [], tags: ["percepção"] })
+        .insert({ conteudo: `Insight from a conversation: ${p.texto}`, referencias: p.passagem ? [p.passagem] : [], tags: ["insight"] })
         .select("id")
         .single();
-      if (error || !data) { setErro(error?.message ?? "Não foi possível guardar."); return; }
+      if (error || !data) { setErro(error?.message ?? "Couldn't save."); return; }
       void processarNota(data.id).catch(() => undefined);
     }
     setMsgs((m) => m.map((x, j) => (j === i && x.percepcao ? { ...x, percepcao: { ...x.percepcao, estado: guardar ? "guardada" : "dispensada" } } : x)));
   }
 
-  async function enviar(pergunta: string) {
+  async function enviar(pergunta: string, voz = false) {
     const q = pergunta.trim();
     if (!q || enviando) return;
+    if (ditado.ativo) void ditado.alternar();
     setErro(null);
     setTexto("");
     const historico = msgs.map((m) => ({ role: m.role, content: m.content }));
-    setMsgs((m) => [...m, { role: "user", content: q }]);
+    setMsgs((m) => [...m, { role: "user", content: q, voz }]);
     setEnviando(true);
     try {
       if (modo === "conversa") {
@@ -108,21 +125,21 @@ export function Conversar() {
           ListHeaderComponent={
             <View style={{ marginBottom: 6 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-                <Text style={{ fontFamily: serif, fontSize: 30, color: c.ink }}>Conversar</Text>
+                <Text style={{ fontFamily: serif, fontSize: 30, color: c.ink }}>Chat</Text>
                 {msgs.length > 0 && (
                   <Pressable onPress={() => setMsgs([])}>
-                    <Text style={{ color: c.muted }}>Nova conversa</Text>
+                    <Text style={{ color: c.muted }}>New conversation</Text>
                   </Pressable>
                 )}
               </View>
               <View style={{ flexDirection: "row", alignSelf: "flex-start", marginTop: 10, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 14, padding: 3 }}>
-                {([["conversa", "Conversa"], ["notas", "Perguntar às notas"]] as const).map(([k, nome]) => (
+                {([["conversa", "Talk"], ["notas", "Ask my notes"]] as const).map(([k, nome]) => (
                   <Pressable key={k} onPress={() => trocarModo(k)} style={{ borderRadius: 11, paddingHorizontal: 11, paddingVertical: 6, backgroundColor: modo === k ? c.accent : "transparent" }}>
                     <Text style={{ fontSize: 13, fontWeight: modo === k ? "700" : "500", color: modo === k ? c.onAccent : c.muted }}>{nome}</Text>
                   </Pressable>
                 ))}
               </View>
-              <Text style={{ color: c.muted, marginTop: 8 }}>{modo === "conversa" ? "Converse como com um amigo. Se eu perceber algo, aviso." : "Pense junto com as suas anotações."}</Text>
+              <Text style={{ color: c.muted, marginTop: 8 }}>{modo === "conversa" ? "Talk like you would with a friend. If I notice something, I'll tell you." : "Think alongside your notes."}</Text>
               {msgs.length === 0 && pronto && (
                 <View style={{ marginTop: 18, gap: 8 }}>
                   {(modo === "conversa" ? ABERTURAS : SUGESTOES).map((s) => (
@@ -142,8 +159,8 @@ export function Conversar() {
                   ))}
                   <Text style={{ color: c.muted, fontSize: 12, marginTop: 4 }}>
                     {modo === "conversa"
-                      ? "Eu escuto, lembro do que você já escreveu e, de vez em quando, devolvo uma percepção. Ela é uma hipótese para você levar em oração; quem discerne é você."
-                      : "Eu respondo com base no que você escreveu, e levanto conexões e perguntas. A interpretação continua sendo sua."}
+                      ? "I listen, remember what you've already written and, now and then, offer an insight. It's a hypothesis to take to prayer; you are the one who discerns."
+                      : "I answer based on what you wrote, and raise connections and questions. The interpretation is still yours."}
                   </Text>
                 </View>
               )}
@@ -153,7 +170,7 @@ export function Conversar() {
             m.role === "user" ? (
               <Entra style={{ alignSelf: "flex-end", maxWidth: "90%", flexDirection: "row", alignItems: "flex-end", gap: 8 }}>
                 <View style={{ flexShrink: 1, backgroundColor: c.accent, borderRadius: 18, borderBottomRightRadius: 5, padding: 13 }}>
-                  <Text style={{ color: c.onAccent, fontSize: 16, lineHeight: 23 }}>{m.content}</Text>
+                  <Text style={{ color: c.onAccent, fontSize: 16, lineHeight: 23 }}>{m.voz ? "🎤 " : ""}{m.content}</Text>
                 </View>
                 <Avatar tamanho={30} />
               </Entra>
@@ -165,15 +182,15 @@ export function Conversar() {
                   <ListaFontes fontes={(m.fontes ?? []).filter((f) => m.content.includes(`[${f.n}]`))} />
                   {m.percepcao && m.percepcao.estado !== "dispensada" ? (
                     <View style={{ marginTop: 10, backgroundColor: c.accentSoft, borderColor: c.accent, borderWidth: 1, borderRadius: 12, padding: 11 }}>
-                      <Text style={{ color: c.accent, fontSize: 11, fontWeight: "700", letterSpacing: 0.8 }}>✦ PERCEBI ALGO</Text>
+                      <Text style={{ color: c.accent, fontSize: 11, fontWeight: "700", letterSpacing: 0.8 }}>✦ I NOTICED SOMETHING</Text>
                       <Text style={{ fontFamily: serif, color: c.ink, fontSize: 15, lineHeight: 22, marginTop: 4 }}>{m.percepcao.texto}</Text>
                       {m.percepcao.passagem ? <Text style={{ color: c.muted, fontSize: 12, marginTop: 4 }}>{m.percepcao.passagem}</Text> : null}
                       {m.percepcao.estado === "guardada" ? (
-                        <Text style={{ color: c.accent, fontSize: 12, marginTop: 8 }}>✓ Guardada nas suas notas</Text>
+                        <Text style={{ color: c.accent, fontSize: 12, marginTop: 8 }}>✓ Saved to your notes</Text>
                       ) : (
                         <View style={{ flexDirection: "row", gap: 16, marginTop: 8 }}>
-                          <Pressable onPress={() => decidirPercepcao(i, m.percepcao!, true)}><Text style={{ color: c.accent, fontWeight: "700" }}>Guardar como nota</Text></Pressable>
-                          <Pressable onPress={() => decidirPercepcao(i, m.percepcao!, false)}><Text style={{ color: c.muted }}>Dispensar</Text></Pressable>
+                          <Pressable onPress={() => decidirPercepcao(i, m.percepcao!, true)}><Text style={{ color: c.accent, fontWeight: "700" }}>Save as note</Text></Pressable>
+                          <Pressable onPress={() => decidirPercepcao(i, m.percepcao!, false)}><Text style={{ color: c.muted }}>Dismiss</Text></Pressable>
                         </View>
                       )}
                     </View>
@@ -192,24 +209,44 @@ export function Conversar() {
                   </View>
                 </Entra>
               )}
-              {erro && (
+              {(erro ?? gravador.erro ?? ditado.erro) && (
                 <Text style={{ color: c.ink, backgroundColor: c.accentSoft, padding: 12, borderRadius: 12, marginTop: 8 }}>
-                  {erro}
+                  {erro ?? gravador.erro ?? ditado.erro}
                 </Text>
               )}
             </View>
           }
         />
-        <View style={{ flexDirection: "row", gap: 8, padding: 12, paddingBottom: 90 }}>
-          <Campo
-            value={texto}
-            onChangeText={setTexto}
-            placeholder={modo === "conversa" ? "Conte o que está no seu coração…" : "Pergunte algo sobre suas notas…"}
-            estilo={{ flex: 1 }}
-            onSubmitEditing={() => enviar(texto)}
-            returnKeyType="send"
-          />
-          <Botao titulo="Enviar" onPress={() => enviar(texto)} desabilitado={enviando || !texto.trim()} />
+        <View style={{ flexDirection: "row", gap: 8, padding: 12, paddingBottom: 90, alignItems: "center" }}>
+          {gravador.gravando ? (
+            <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: c.card, borderColor: c.accent, borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 13 }}>
+              <Text style={{ color: c.ink }}>🔴 Recording… {Math.floor(gravador.segundos / 60)}:{String(gravador.segundos % 60).padStart(2, "0")}</Text>
+              <Pressable onPress={gravador.cancelar}><Text style={{ color: c.muted }}>Cancel</Text></Pressable>
+            </View>
+          ) : (
+            <Campo
+              value={texto}
+              onChangeText={setTexto}
+              placeholder={transcrevendo ? "Transcribing your voice message…" : ditado.ativo ? "Listening… speak now" : modo === "conversa" ? "Tell me what's on your heart…" : "Ask something about your notes…"}
+              estilo={{ flex: 1 }}
+              onSubmitEditing={() => enviar(texto)}
+              returnKeyType="send"
+            />
+          )}
+          {!gravador.gravando && (
+            <>
+              <Pressable onPress={() => setIdioma((x) => (x === "en-US" ? "pt-BR" : "en-US"))} disabled={ditado.ativo} accessibilityLabel="Dictation language" style={{ paddingHorizontal: 8, paddingVertical: 12, opacity: ditado.ativo ? 0.5 : 1 }}>
+                <Text style={{ color: c.muted, fontWeight: "700", fontSize: 12 }}>{idioma === "en-US" ? "EN" : "PT"}</Text>
+              </Pressable>
+              <Pressable onPress={() => void ditado.alternar()} accessibilityLabel="Dictate: speech becomes text" style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: ditado.ativo ? c.accent : c.line, backgroundColor: ditado.ativo ? c.accentSoft : c.card }}>
+                <Text style={{ fontSize: 18 }}>⌨️</Text>
+              </Pressable>
+            </>
+          )}
+          <Pressable onPress={gravador.gravando ? gravador.parar : gravador.iniciar} disabled={enviando || transcrevendo} accessibilityLabel={gravador.gravando ? "Stop and send voice message" : "Record a voice message"} style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: gravador.gravando ? c.accent : c.card, borderWidth: 1, borderColor: gravador.gravando ? c.accent : c.line, opacity: enviando || transcrevendo ? 0.5 : 1 }}>
+            <Text style={{ fontSize: 18 }}>{gravador.gravando ? "⏹" : "🎙️"}</Text>
+          </Pressable>
+          {!gravador.gravando && <Botao titulo="Send" onPress={() => enviar(texto)} desabilitado={enviando || transcrevendo || !texto.trim()} />}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

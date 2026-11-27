@@ -18,7 +18,7 @@ import { ListaConexoes } from "../components/Conexoes";
 import { Passagem } from "../components/Passagem";
 import { TagsSugeridas } from "../components/TagsSugeridas";
 
-const ORIGEM: Record<Reflexao["origem"], string> = { auto: "Ao guardar", edicao: "Após editar", manual: "Pedida por você" };
+const ORIGEM: Record<Reflexao["origem"], string> = { auto: "On save", edicao: "After editing", manual: "Requested by you" };
 
 
 function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, aoAbrirOutra, aoApagar, recarregar }: {
@@ -60,7 +60,7 @@ function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, a
     if (error) { setErro(error.message); setOcupado(null); return; }
     setEditando(false);
     setOcupado("refletindo");
-    try { await processarNota(nota.id, "edicao"); } catch (e) { setErro(`Alterações salvas, mas a nova reflexão falhou: ${(e as Error).message}`); }
+    try { await processarNota(nota.id, "edicao"); } catch (e) { setErro(`Changes saved, but the new reflection failed: ${(e as Error).message}`); }
     setVersoes(null);
     await recarregar();
     setOcupado(null);
@@ -75,9 +75,9 @@ function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, a
   }
 
   function apagar() {
-    Alert.alert("Apagar esta nota?", "Você terá alguns segundos para desfazer.", [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Apagar", style: "destructive", onPress: aoApagar },
+    Alert.alert("Delete this note?", "You'll have a few seconds to undo.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: aoApagar },
     ]);
   }
 
@@ -91,7 +91,7 @@ function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, a
             <Text style={{ color: c.muted, fontSize: 12 }}>{formatarData(nota.created_at)}</Text>
             {refsUsuario.map((r) => <Text key={r.rotulo} style={{ color: c.accent, backgroundColor: c.accentSoft, fontSize: 12, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: "hidden" }}>{r.rotulo}</Text>)}
             {refsIa.map((r) => <Text key={r.rotulo} style={{ color: c.sage, borderColor: c.sage, borderWidth: 1, borderStyle: "dashed", fontSize: 12, paddingHorizontal: 8, paddingVertical: 1, borderRadius: 999 }}>✦ {r.rotulo}</Text>)}
-            {nota.local ? <Text style={{ color: c.muted, fontSize: 12 }}>· aguardando envio</Text> : nConexoes > 0 ? <Text style={{ color: c.muted, fontSize: 12, marginLeft: "auto" }}>{nConexoes} {nConexoes === 1 ? "conexão" : "conexões"}</Text> : null}
+            {nota.local ? <Text style={{ color: c.muted, fontSize: 12 }}>· aguardando envio</Text> : nConexoes > 0 ? <Text style={{ color: c.muted, fontSize: 12, marginLeft: "auto" }}>{nConexoes} {nConexoes === 1 ? "connection" : "connections"}</Text> : null}
           </View>
           <Text numberOfLines={aberta ? undefined : 3} style={{ marginTop: 8, color: c.ink, fontFamily: serif, fontSize: 16, lineHeight: 24 }}>{nota.conteudo}</Text>
           {nota.tags.length > 0 && <Text style={{ marginTop: 8, color: c.muted, fontSize: 12 }}>{nota.tags.map((t) => `#${t}`).join("  ")}</Text>}
@@ -102,16 +102,16 @@ function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, a
             {editando ? (
               <View style={{ gap: 8 }}>
                 <Campo multiline value={texto} onChangeText={setTexto} style={{ minHeight: 110, textAlignVertical: "top", fontFamily: serif, fontSize: 16 }} />
-                <Campo value={refs} onChangeText={setRefs} placeholder="Passagem (opcional)" />
+                <Campo value={refs} onChangeText={setRefs} placeholder="Passage (optional)" />
                 <Campo value={tags} onChangeText={setTags} placeholder="Tags" />
-                <Botao titulo="Salvar e refazer reflexão" onPress={salvarEdicao} carregando={ocupado === "salvando"} desabilitado={!texto.trim() || ocupado !== null} />
-                <Toque onPress={() => setEditando(false)} style={{ alignItems: "center", padding: 8 }}><Text style={{ color: c.muted }}>Cancelar</Text></Toque>
+                <Botao titulo="Save and redo reflection" onPress={salvarEdicao} carregando={ocupado === "salvando"} desabilitado={!texto.trim() || ocupado !== null} />
+                <Toque onPress={() => setEditando(false)} style={{ alignItems: "center", padding: 8 }}><Text style={{ color: c.muted }}>Cancel</Text></Toque>
               </View>
             ) : (
               <>
                 {(refsUsuario.length > 0 || refsIa.length > 0) && (
                   <View>
-                    {rotulo("Passagem e contexto")}
+                    {rotulo("Passage and context")}
                     <View style={{ gap: 8 }}>
                       {refsUsuario.map((r) => <Passagem key={r.rotulo} rotulo={r.rotulo} />)}
                       {refsIa.map((r) => <Passagem key={r.rotulo} rotulo={r.rotulo} sugerida motivo={nota.passagem_ia?.motivo} />)}
@@ -120,24 +120,24 @@ function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, a
                 )}
                 <TagsSugeridas nota={nota} aoMudar={recarregar} />
                 <View>
-                  {rotulo("Reflexão")}
-                  {ocupado === "refletindo" ? <Pensando texto="Pensando de novo sobre esta nota" /> : (
+                  {rotulo("Reflection")}
+                  {ocupado === "refletindo" ? <Pensando texto="Thinking again about this note" /> : (
                     nota.reflexao && nota.reflexao_fontes?.length
                       ? <TextoComCitacoes texto={nota.reflexao} fontes={nota.reflexao_fontes} />
-                      : <Text style={{ color: nota.reflexao ? c.ink : c.muted, fontSize: 15, lineHeight: 23 }}>{nota.reflexao ? limparCitacoes(nota.reflexao) : "Ainda sem reflexão."}</Text>
+                      : <Text style={{ color: nota.reflexao ? c.ink : c.muted, fontSize: 15, lineHeight: 23 }}>{nota.reflexao ? limparCitacoes(nota.reflexao) : "No reflection yet."}</Text>
                   )}
                   <View style={{ flexDirection: "row", gap: 18, marginTop: 10 }}>
                     <Toque onPress={novaReflexao} disabled={ocupado !== null} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
-                      <Icon nome="refazer" cor={c.accent} tamanho={16} /><Text style={{ color: c.accent }}>Gerar nova reflexão</Text>
+                      <Icon nome="refazer" cor={c.accent} tamanho={16} /><Text style={{ color: c.accent }}>Generate new reflection</Text>
                     </Toque>
-                    <Toque onPress={() => (versoes ? setVersoes(null) : carregarVersoes())}><Text style={{ color: c.muted }}>{versoes ? "Ocultar versões" : "Ver versões"}</Text></Toque>
+                    <Toque onPress={() => (versoes ? setVersoes(null) : carregarVersoes())}><Text style={{ color: c.muted }}>{versoes ? "Hide versions" : "See versions"}</Text></Toque>
                   </View>
                   {versoes && (
                     <Entra style={{ marginTop: 10, gap: 8 }}>
-                      {versoes.length === 0 && <Text style={{ color: c.muted }}>Nenhuma versão guardada ainda.</Text>}
+                      {versoes.length === 0 && <Text style={{ color: c.muted }}>No saved versions yet.</Text>}
                       {versoes.map((v, i) => (
                         <View key={v.id} style={{ borderWidth: 1, borderColor: c.line, backgroundColor: c.paper, borderRadius: 12, padding: 10 }}>
-                          <Text style={{ color: c.muted, fontSize: 12 }}>{i === 0 ? "Atual · " : ""}{ORIGEM[v.origem]} · {formatarData(v.created_at)}</Text>
+                          <Text style={{ color: c.muted, fontSize: 12 }}>{i === 0 ? "Current · " : ""}{ORIGEM[v.origem]} · {formatarData(v.created_at)}</Text>
                           {v.fontes?.length ? <TextoComCitacoes texto={v.texto} fontes={v.fontes} /> : <Text style={{ color: c.ink, marginTop: 4, lineHeight: 21 }}>{limparCitacoes(v.texto)}</Text>}
                         </View>
                       ))}
@@ -145,12 +145,12 @@ function Cartao({ nota, notas, conexoes, aberta, destaque, indice, aoAlternar, a
                   )}
                 </View>
                 <View>
-                  {rotulo("Por que está ligada a outras notas")}
+                  {rotulo("Why it's linked to other notes")}
                   <ListaConexoes notaId={nota.id} conexoes={conexoes} notas={notas} aoAbrir={aoAbrirOutra} />
                 </View>
                 <View style={{ flexDirection: "row", gap: 22, borderTopWidth: 1, borderTopColor: c.line, paddingTop: 12 }}>
-                  <Toque onPress={abrirEdicao} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}><Icon nome="editar" cor={c.muted} tamanho={16} /><Text style={{ color: c.muted }}>Editar</Text></Toque>
-                  <Toque onPress={apagar} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}><Icon nome="apagar" cor={c.muted} tamanho={16} /><Text style={{ color: c.muted }}>Apagar</Text></Toque>
+                  <Toque onPress={abrirEdicao} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}><Icon nome="editar" cor={c.muted} tamanho={16} /><Text style={{ color: c.muted }}>Edit</Text></Toque>
+                  <Toque onPress={apagar} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}><Icon nome="apagar" cor={c.muted} tamanho={16} /><Text style={{ color: c.muted }}>Delete</Text></Toque>
                 </View>
               </>
             )}
@@ -187,7 +187,7 @@ export function Notas() {
   async function apagarDeVez(id: string) {
     timers.current.delete(id);
     const { error } = await supabase.from("sc_notas").delete().eq("id", id);
-    if (error) Alert.alert("Não consegui apagar", error.message);
+    if (error) Alert.alert("Couldn't delete", error.message);
     setOcultas((o) => { const n = new Set(o); n.delete(id); return n; });
     setDesfazer((d) => (d === id ? null : d));
     await recarregarRef.current();
@@ -271,15 +271,15 @@ export function Notas() {
           ListHeaderComponent={
             <View style={{ marginBottom: 14 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-                <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink }}>Notas</Text>
-                <Toque disabled={!notas?.length} onPress={() => Share.share({ message: exportarMarkdown((notas ?? []).filter((n) => !n.local)), title: "Segundo Cérebro" })} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
-                  <Icon nome="baixar" cor={c.muted} tamanho={16} /><Text style={{ color: c.muted }}>Exportar</Text>
+                <Text style={{ fontFamily: serif, fontSize: 32, color: c.ink }}>Notes</Text>
+                <Toque disabled={!notas?.length} onPress={() => Share.share({ message: exportarMarkdown((notas ?? []).filter((n) => !n.local)), title: "Second Brain" })} style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                  <Icon nome="baixar" cor={c.muted} tamanho={16} /><Text style={{ color: c.muted }}>Export</Text>
                 </Toque>
               </View>
-              {offline && <Text style={{ color: c.muted, fontSize: 12, marginTop: 4 }}>Sem internet: mostrando o que está guardado no aparelho.</Text>}
-              <Campo value={busca} onChangeText={setBusca} placeholder="Buscar por palavra ou por ideia…" estilo={{ marginTop: 12 }} />
-              {buscando && <Text style={{ color: c.muted, fontSize: 12, marginTop: 4 }}>buscando…</Text>}
-              {achados && !achados.semantica && <Text style={{ color: c.muted, fontSize: 12, marginTop: 6 }}>Busca só por palavras agora (a busca por sentido está indisponível no momento).</Text>}
+              {offline && <Text style={{ color: c.muted, fontSize: 12, marginTop: 4 }}>Offline: showing what's saved on your device.</Text>}
+              <Campo value={busca} onChangeText={setBusca} placeholder="Search by word or by idea…" estilo={{ marginTop: 12 }} />
+              {buscando && <Text style={{ color: c.muted, fontSize: 12, marginTop: 4 }}>searching…</Text>}
+              {achados && !achados.semantica && <Text style={{ color: c.muted, fontSize: 12, marginTop: 6 }}>Searching by words only for now (search by meaning is unavailable at the moment).</Text>}
               {todasTags.length > 0 && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }} contentContainerStyle={{ gap: 8 }}>
                   {todasTags.map((t) => (
@@ -287,10 +287,10 @@ export function Notas() {
                   ))}
                 </ScrollView>
               )}
-              {!notas && <View style={{ marginTop: 24 }}><Pensando texto="Carregando" /></View>}
+              {!notas && <View style={{ marginTop: 24 }}><Pensando texto="Loading" /></View>}
             </View>
           }
-          ListEmptyComponent={notas ? <Vazio texto={notas.length === 0 ? "Você ainda não escreveu nenhuma nota." : "Nada encontrado."} /> : undefined}
+          ListEmptyComponent={notas ? <Vazio texto={notas.length === 0 ? "You haven't written any notes yet." : "Nothing found."} /> : undefined}
           renderItem={({ item, index }) => (
             <Cartao nota={item} notas={notas ?? []} conexoes={conexoes} indice={index} aberta={aberta === item.id} destaque={destaque === item.id}
               aoAlternar={() => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setAberta(aberta === item.id ? null : item.id); }} aoAbrirOutra={abrirOutra} aoApagar={() => agendarExclusao(item.id)} recarregar={recarregar} />
@@ -299,8 +299,8 @@ export function Notas() {
       </KeyboardAvoidingView>
       {desfazer && (
         <View style={{ position: "absolute", left: 20, right: 20, bottom: 92, flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: c.ink, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12 }}>
-          <Text style={{ color: c.paper }}>Nota apagada.</Text>
-          <Toque onPress={() => desfazerExclusao(desfazer)}><Text style={{ color: c.accentSoft, fontWeight: "700" }}>Desfazer</Text></Toque>
+          <Text style={{ color: c.paper }}>Note deleted.</Text>
+          <Toque onPress={() => desfazerExclusao(desfazer)}><Text style={{ color: c.accentSoft, fontWeight: "700" }}>Undo</Text></Toque>
         </View>
       )}
     </SafeAreaView>

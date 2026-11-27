@@ -23,14 +23,14 @@ export function TagsSugeridas({ nota, aoMudar }: { nota: Nota; aoMudar: () => vo
 
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-      <Text style={{ color: c.muted, fontSize: 13 }}>Tags sugeridas:</Text>
+      <Text style={{ color: c.muted, fontSize: 13 }}>Suggested tags:</Text>
       {nota.tags_sugeridas.map((t, i) => (
         <Pop key={t} delay={i * 60}>
           <View style={{ flexDirection: "row", borderWidth: 1, borderStyle: "dashed", borderColor: c.sage, borderRadius: 999, overflow: "hidden" }}>
-            <Toque disabled={ocupado} onPress={() => decidir(t, true)} style={{ paddingHorizontal: 10, paddingVertical: 6 }} accessibilityLabel={`Confirmar tag ${t}`}>
+            <Toque disabled={ocupado} onPress={() => decidir(t, true)} style={{ paddingHorizontal: 10, paddingVertical: 6 }} accessibilityLabel={`Confirm tag ${t}`}>
               <Text style={{ color: c.sage, fontSize: 14 }}>+ #{t}</Text>
             </Toque>
-            <Toque disabled={ocupado} onPress={() => decidir(t, false)} style={{ paddingHorizontal: 10, paddingVertical: 6, borderLeftWidth: 1, borderLeftColor: c.sage, borderStyle: "dashed" }} accessibilityLabel={`Descartar tag ${t}`}>
+            <Toque disabled={ocupado} onPress={() => decidir(t, false)} style={{ paddingHorizontal: 10, paddingVertical: 6, borderLeftWidth: 1, borderLeftColor: c.sage, borderStyle: "dashed" }} accessibilityLabel={`Dismiss tag ${t}`}>
               <Text style={{ color: c.sage, fontSize: 14 }}>×</Text>
             </Toque>
           </View>
